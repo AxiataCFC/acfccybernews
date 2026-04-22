@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACFC | Active Incidents</title>
+<link rel="stylesheet" href="sentinel.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+.page { display:flex; flex-direction:column; height:100vh; }
+.content { flex:1; display:grid; grid-template-columns:320px 1fr; grid-template-rows:auto 1fr; gap:8px; padding:8px; overflow:hidden; }
+.top-strip { grid-column:1/-1; display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+.left-col  { display:flex; flex-direction:column; gap:8px; overflow:hidden; }
+.right-col { display:flex; flex-direction:column; gap:8px; overflow:hidden; }
+
+.incident-detail { flex:1; overflow-y:auto; }
+
+/* INCIDENT TABLE */
+.inc-row { display:grid; grid-template-columns:28px 1fr 90px 80px 80px 90px; gap:0; align-items:center; padding:7px 10px; border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:background 0.15s; font-size:11px; }
+.inc-row:hover { background:var(--bg-hover); }
+.inc-row.selected { background:rgba(0,120,212,0.12); border-left:2px solid var(--sentinel-blue); }
+.inc-row.header { background:var(--bg-base); font-size:10px; color:var(--text-dim); letter-spacing:0.5px; text-transform:uppercase; cursor:default; border-bottom:1px solid var(--border); }
+.inc-row.header:hover { background:var(--bg-base); }
+.inc-num { font-size:10px; color:var(--text-dim); }
+.inc-title { color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:8px; }
+.inc-title strong { color:var(--text-bright); font-weight:500; }
+
+/* DETAIL PANEL */
+.detail-section { padding:14px 0; border-bottom:1px solid var(--border); }
+.detail-section:last-child { border:none; }
+.detail-label { font-size:10px; color:var(--text-dim); letter-spacing:0.5px; text-transform:uppercase; margin-bottom:6px; }
+.detail-value { font-size:12px; color:var(--text-bright); line-height:1.6; }
+
+.timeline-item { display:flex; gap:10px; padding:5px 0; }
+.tl-dot { width:8px; height:8px; border-radius:50%; margin-top:3px; flex-shrink:0; }
+.tl-time { font-size:10px; color:var(--text-dim); white-space:nowrap; width:50px; flex-shrink:0; }
+.tl-text { font-size:11px; color:var(--text); }
+
+.tactic-chip { display:inline-block; font-size:10px; padding:2px 8px; background:rgba(123,104,238,0.12); color:#9d88f0; border:1px solid rgba(123,104,238,0.25); border-radius:3px; margin:2px; }
+
+.entity-row { display:flex; align-items:center; gap:8px; padding:5px 8px; background:var(--bg-card); border-radius:3px; margin-bottom:4px; }
+.entity-type { font-size:9px; color:var(--text-dim); background:var(--bg-base); padding:1px 6px; border-radius:2px; width:55px; text-align:center; }
+.entity-val { font-size:11px; color:var(--text-bright); flex:1; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-placeholder" onclick="document.getElementById('logo-upload').click()">[ LOGO ]</div>
+      <input type="file" id="logo-upload" accept="image/*" onchange="handleLogo(event)">
+      <img id="logo-img" src="" alt="">
+    </div>
+    <div>
+      <div class="topbar-title">Axiata Cyber Fusion Center</div>
+      <div class="topbar-sub">Microsoft Sentinel — Incidents</div>
+    </div>
+    <nav class="topbar-nav">
+      <a href="index.html"         class="nav-item">Overview</a>
+      <a href="incidents.html"     class="nav-item active">Incidents</a>
+      <a href="executive.html"     class="nav-item">Executive</a>
+      <a href="vulnerability.html" class="nav-item">Vulnerabilities</a>
+      <a href="intel.html"         class="nav-item">Threat Intel</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="topbar-badge"><span class="live-dot"></span>LIVE</span>
+      <span class="topbar-clock" id="clock">--:--:--</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- TOP KPI STRIP -->
+    <div class="top-strip">
+      <div class="panel" style="padding:10px 14px;">
+        <div style="font-size:10px;color:var(--text-dim)">New (24h)</div>
+        <div style="font-size:26px;font-weight:600;color:#e74856">14</div>
+        <div style="font-size:10px;color:var(--text-dim)">▲ 3 since yesterday</div>
+      </div>
+      <div class="panel" style="padding:10px 14px;">
+        <div style="font-size:10px;color:var(--text-dim)">Active</div>
+        <div style="font-size:26px;font-weight:600;color:#f7630c">42</div>
+        <div style="font-size:10px;color:var(--text-dim)">requiring triage</div>
+      </div>
+      <div class="panel" style="padding:10px 14px;">
+        <div style="font-size:10px;color:var(--text-dim)">In Progress</div>
+        <div style="font-size:26px;font-weight:600;color:#1a90e0">18</div>
+        <div style="font-size:10px;color:var(--text-dim)">assigned to analysts</div>
+      </div>
+      <div class="panel" style="padding:10px 14px;">
+        <div style="font-size:10px;color:var(--text-dim)">Closed Today</div>
+        <div style="font-size:26px;font-weight:600;color:#13a10e">31</div>
+        <div style="font-size:10px;color:var(--text-dim)">resolved / false pos.</div>
+      </div>
+      <div class="panel" style="padding:10px 14px;">
+        <div style="font-size:10px;color:var(--text-dim)">Avg MTTR</div>
+        <div style="font-size:26px;font-weight:600;color:#9d88f0">3.2h</div>
+        <div style="font-size:10px;color:var(--text-dim)">▼ improved</div>
+      </div>
+    </div>
+
+    <!-- LEFT: INCIDENT LIST -->
+    <div class="left-col">
+      <div class="panel" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+        <div class="panel-header">
+          <span class="panel-title">Active Incidents</span>
+          <span class="badge badge-active" style="margin-left:auto">42 Open</span>
+        </div>
+        <div style="overflow-y:auto;flex:1;">
+          <div class="inc-row header">
+            <div>#</div><div>Title</div><div>Severity</div><div>Status</div><div>Time</div><div>Owner</div>
+          </div>
+          <div id="incident-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: INCIDENT DETAIL + CHARTS -->
+    <div class="right-col">
+      <div class="panel" style="flex:1.8;overflow:hidden;display:flex;flex-direction:column;">
+        <div class="panel-header">
+          <span class="panel-title" id="detail-title">INC-0042 — Suspicious Sign-in from Tor Exit Node</span>
+          <span class="badge badge-critical" style="margin-left:auto">Critical</span>
+        </div>
+        <div class="panel-body incident-detail">
+
+          <div class="detail-section">
+            <div class="detail-label">MITRE ATT&CK Tactics</div>
+            <div>
+              <span class="tactic-chip">Initial Access</span>
+              <span class="tactic-chip">Credential Access</span>
+              <span class="tactic-chip">Defense Evasion</span>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <div class="detail-label">Description</div>
+            <div class="detail-value">A user account <strong>svc_backup@axiata.com</strong> successfully authenticated from a known Tor exit node IP <strong>185.220.101.47</strong> (DE). This is anomalous — the account has never previously authenticated outside of Malaysia. Brute-force attempts preceded the successful login by 4 minutes. Entra ID risk score elevated to <strong>High</strong>.</div>
+          </div>
+
+          <div class="detail-section">
+            <div class="detail-label">Affected Entities</div>
+            <div id="entities"></div>
+          </div>
+
+          <div class="detail-section">
+            <div class="detail-label">Activity Timeline</div>
+            <div id="timeline"></div>
+          </div>
+
+          <div class="detail-section">
+            <div class="detail-label">Recommended Actions</div>
+            <div class="detail-value">
+              1. Immediately disable account <strong>svc_backup@axiata.com</strong> and revoke active sessions<br>
+              2. Force MFA re-enrollment<br>
+              3. Review all actions taken by this account in the last 72h via Audit Logs<br>
+              4. Check for lateral movement from the authenticated endpoint<br>
+              5. Block IP range 185.220.101.0/24 at perimeter firewall
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="panel" style="flex:1;overflow:hidden;">
+        <div class="panel-header"><span class="panel-title">Incident Trend — 30 Days</span></div>
+        <div class="panel-body"><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function tick() {
+  const n=new Date();
+  document.getElementById('clock').textContent=
+    [n.getHours(),n.getMinutes(),n.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
+}
+setInterval(tick,1000); tick();
+
+function handleLogo(e) {
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=ev=>{
+    document.getElementById('logo-img').src=ev.target.result;
+    document.getElementById('logo-img').style.display='block';
+    document.querySelector('.topbar-logo-placeholder').style.display='none';
+  }; r.readAsDataURL(f);
+}
+
+Chart.defaults.color='#6e7f9a'; Chart.defaults.font.family='Inter'; Chart.defaults.font.size=10;
+
+const incidents = [
+  { id:'INC-0042', title:'Suspicious Sign-in from Tor Exit Node', sev:'critical', status:'active',   time:'09:14', owner:'Ahnaf' },
+  { id:'INC-0041', title:'Possible Ransomware — File Encryption Spike', sev:'critical', status:'active',   time:'08:52', owner:'Unassigned' },
+  { id:'INC-0040', title:'Brute Force Attack — SSH Port 22',      sev:'high',     status:'progress', time:'08:31', owner:'Diba' },
+  { id:'INC-0039', title:'Mass Phishing Campaign Detected',        sev:'high',     status:'progress', time:'07:45', owner:'Rafaya' },
+  { id:'INC-0038', title:'Anomalous Data Exfiltration — 4.2GB',   sev:'critical', status:'active',   time:'07:12', owner:'Unassigned' },
+  { id:'INC-0037', title:'Malware Dropper — endpoint WS-041',      sev:'high',     status:'progress', time:'06:58', owner:'Ahnaf' },
+  { id:'INC-0036', title:'Impossible Travel — Admin Account',      sev:'medium',   status:'active',   time:'06:30', owner:'Unassigned' },
+  { id:'INC-0035', title:'Lateral Movement via PsExec',            sev:'high',     status:'progress', time:'05:44', owner:'Diba' },
+  { id:'INC-0034', title:'C2 Beaconing to Known Malicious IP',     sev:'critical', status:'active',   time:'04:22', owner:'Unassigned' },
+  { id:'INC-0033', title:'Privilege Escalation — SPN Abuse',       sev:'high',     status:'progress', time:'03:15', owner:'Rafaya' },
+  { id:'INC-0032', title:'Suspicious PowerShell Execution',        sev:'medium',   status:'active',   time:'02:48', owner:'Unassigned' },
+  { id:'INC-0031', title:'Failed MFA — 47 attempts, 1 account',   sev:'medium',   status:'progress', time:'01:33', owner:'Ahnaf' },
+];
+
+const list = document.getElementById('incident-list');
+incidents.forEach((inc,i) => {
+  const sevClass = `badge-${inc.sev}`;
+  const statClass = inc.status==='active'?'badge-active':'badge-progress';
+  const statLabel = inc.status==='active'?'Active':'In Progress';
+  list.innerHTML += `<div class="inc-row ${i===0?'selected':''}" onclick="selectRow(this,'${inc.id}','${inc.title}')">
+    <div class="inc-num">${i+1}</div>
+    <div class="inc-title"><strong>${inc.id}</strong> ${inc.title}</div>
+    <div><span class="badge ${sevClass}">${inc.sev}</span></div>
+    <div><span class="badge ${statClass}">${statLabel}</span></div>
+    <div style="color:var(--text-dim);font-size:10px">${inc.time}</div>
+    <div style="color:var(--text-dim);font-size:10px">${inc.owner}</div>
+  </div>`;
+});
+
+function selectRow(el, id, title) {
+  document.querySelectorAll('.inc-row').forEach(r=>r.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('detail-title').textContent = id + ' — ' + title;
+}
+
+// ENTITIES
+const entities = [
+  { type:'Account', value:'svc_backup@axiata.com' },
+  { type:'IP',      value:'185.220.101.47 (Tor Exit — DE)' },
+  { type:'Host',    value:'AXIATA-WS-088' },
+  { type:'URL',     value:'login.microsoftonline.com' },
+];
+const entDiv = document.getElementById('entities');
+entities.forEach(e => {
+  entDiv.innerHTML += `<div class="entity-row">
+    <span class="entity-type">${e.type}</span>
+    <span class="entity-val">${e.value}</span>
+  </div>`;
+});
+
+// TIMELINE
+const tlItems = [
+  { time:'09:10', text:'47 failed login attempts from 185.220.101.47', color:'#f7630c' },
+  { time:'09:14', text:'Successful authentication — svc_backup@axiata.com', color:'#e74856' },
+  { time:'09:14', text:'Entra ID risk score elevated to HIGH', color:'#e74856' },
+  { time:'09:15', text:'Sentinel alert triggered: Tor Exit Node Sign-in', color:'#0078d4' },
+  { time:'09:16', text:'Incident INC-0042 auto-created — severity Critical', color:'#0078d4' },
+  { time:'09:18', text:'Analyst notified via Teams integration', color:'#13a10e' },
+];
+const tlDiv = document.getElementById('timeline');
+tlItems.forEach(t => {
+  tlDiv.innerHTML += `<div class="timeline-item">
+    <div class="tl-dot" style="background:${t.color}"></div>
+    <div class="tl-time">${t.time}</div>
+    <div class="tl-text">${t.text}</div>
+  </div>`;
+});
+
+// TREND CHART
+const labels30 = Array.from({length:30},(_,i)=>{
+  const d=new Date(); d.setDate(d.getDate()-29+i);
+  return (d.getMonth()+1)+'/'+d.getDate();
+});
+const trendData = [8,12,7,15,11,9,14,18,13,10,16,20,15,12,18,22,17,14,19,25,21,16,23,28,20,18,24,31,27,42];
+new Chart(document.getElementById('trendChart'),{
+  type:'bar',
+  data:{
+    labels:labels30,
+    datasets:[
+      { label:'Closed', data:trendData.map(v=>Math.floor(v*0.7)), backgroundColor:'rgba(19,161,14,0.5)', borderRadius:1 },
+      { label:'Active', data:trendData.map(v=>Math.ceil(v*0.3)),  backgroundColor:'rgba(231,72,86,0.6)', borderRadius:1 }
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ position:'top', labels:{ boxWidth:10, padding:8, font:{size:10} } } },
+    scales:{
+      x:{ stacked:true, grid:{ display:false }, ticks:{ maxTicksLimit:10, font:{size:9} } },
+      y:{ stacked:true, grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ font:{size:9} } }
+    }
+  }
+});
+</script>
+</body>
+</html>
