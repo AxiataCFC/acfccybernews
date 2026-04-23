@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACFC | Threat Intelligence Feed</title>
+<link rel="stylesheet" href="sentinel.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+.page { display:flex; flex-direction:column; height:100vh; }
+.content { flex:1; display:grid; grid-template-columns:200px 1fr 240px; gap:8px; padding:8px; overflow:hidden; }
+
+/* TICKER */
+.ticker-bar {
+  background:rgba(0,120,212,0.08); border-bottom:1px solid var(--border);
+  height:30px; display:flex; align-items:center; overflow:hidden; flex-shrink:0;
+}
+.ticker-label { font-size:11px; font-weight:600; letter-spacing:1px; color:#fff; background:var(--sentinel-blue); padding:0 14px; height:100%; display:flex; align-items:center; white-space:nowrap; flex-shrink:0; }
+.ticker-track { overflow:hidden; flex:1; }
+.ticker-inner { display:flex; gap:50px; white-space:nowrap; animation:ticker 70s linear infinite; }
+.ticker-inner span { font-size:11px; color:var(--sentinel-blue); }
+.ticker-inner .sep { color:var(--text-dim); }
+@keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+/* SIDEBAR */
+.sidebar { overflow-y:auto; display:flex; flex-direction:column; gap:8px; }
+.sidebar::-webkit-scrollbar { width:3px; }
+
+.source-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:3px; cursor:pointer; border:1px solid transparent; transition:all 0.15s; }
+.source-item:hover { background:var(--bg-hover); }
+.source-item.active { background:rgba(0,120,212,0.12); border-color:rgba(0,120,212,0.3); }
+.source-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.source-name { flex:1; font-size:11px; color:var(--text); }
+.source-count { font-size:10px; color:var(--text-dim); background:var(--bg-card); padding:1px 5px; border-radius:2px; }
+.source-item.active .source-name { color:var(--sentinel-blue); }
+
+/* FEED */
+.feed-area { overflow-y:auto; display:flex; flex-direction:column; gap:1px; }
+.feed-area::-webkit-scrollbar { width:4px; }
+
+.news-card {
+  background:var(--bg-panel); border:1px solid var(--border);
+  border-left:3px solid transparent; padding:11px 14px;
+  cursor:pointer; transition:all 0.15s;
+  animation:fadeUp 0.25s ease forwards; opacity:0; transform:translateY(4px);
+}
+@keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+.news-card:hover { background:var(--bg-hover); border-color:rgba(0,120,212,0.25); }
+.news-card.sev-critical { border-left-color:#e74856; }
+.news-card.sev-high     { border-left-color:#f7630c; }
+.news-card.sev-medium   { border-left-color:#0078d4; }
+.news-card.sev-low      { border-left-color:#13a10e; }
+
+.card-top { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
+.card-source { font-size:10px; padding:1px 6px; border-radius:2px; background:var(--bg-card); border:1px solid var(--border); color:var(--text-dim); letter-spacing:0.5px; }
+.card-time { font-size:10px; color:var(--text-dim); margin-left:auto; }
+.card-title { font-size:13px; font-weight:500; color:var(--text-bright); line-height:1.35; margin-bottom:4px; }
+.card-desc { font-size:11px; color:var(--text-dim); line-height:1.55; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.card-footer { display:flex; align-items:center; gap:6px; margin-top:8px; padding-top:7px; border-top:1px solid rgba(255,255,255,0.04); }
+.card-link { font-size:10px; color:var(--sentinel-blue); text-decoration:none; }
+.card-link:hover { text-decoration:underline; }
+.card-kw { font-size:10px; color:var(--text-dim); background:var(--bg-card); padding:1px 6px; border-radius:2px; border:1px solid var(--border); }
+
+/* RIGHT PANEL */
+.right-col { display:flex; flex-direction:column; gap:8px; overflow-y:auto; }
+.right-col::-webkit-scrollbar { width:3px; }
+
+.ioc-row { display:flex; align-items:center; gap:6px; padding:5px 8px; font-size:10px; border-bottom:1px solid rgba(255,255,255,0.04); }
+.ioc-row:last-child { border:none; }
+.ioc-type { font-size:9px; color:var(--text-dim); background:var(--bg-card); padding:1px 5px; border-radius:2px; width:36px; text-align:center; flex-shrink:0; }
+.ioc-val  { flex:1; color:var(--text); font-family:monospace; font-size:10px; word-break:break-all; }
+.ioc-conf { font-size:10px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-placeholder" onclick="document.getElementById('logo-upload').click()">[ LOGO ]</div>
+      <input type="file" id="logo-upload" accept="image/*" onchange="handleLogo(event)">
+      <img id="logo-img" src="" alt="">
+    </div>
+    <div>
+      <div class="topbar-title">Axiata Cyber Fusion Center</div>
+      <div class="topbar-sub">Microsoft Sentinel — Threat Intelligence</div>
+    </div>
+    <nav class="topbar-nav">
+      <a href="index.html"         class="nav-item">Overview</a>
+      <a href="incidents.html"     class="nav-item">Exploit Movement</a>
+      <a href="edr.html"           class="nav-item">EDR / XDR</a>
+      <a href="acta.html"          class="nav-item">ACTA</a>
+      <a href="intel.html"         class="nav-item active">Threat Intel</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="topbar-badge"><span class="live-dot"></span>LIVE</span>
+      <span class="topbar-clock" id="clock">--:--:--</span>
+    </div>
+  </div>
+
+  <!-- TICKER -->
+  <div class="ticker-bar">
+    <div class="ticker-label">BREAKING</div>
+    <div class="ticker-track">
+      <div class="ticker-inner" id="ticker">
+        <span>[CISA] KEV Update: CVE-2024-3400 PAN-OS RCE added to Known Exploited Vulnerabilities catalog</span>
+        <span class="sep"> · </span>
+        <span>[THN] New APT group targeting Southeast Asian telecom providers via supply chain attack</span>
+        <span class="sep"> · </span>
+        <span>[BC] LockBit 3.0 ransomware variant observed encrypting backup servers before primary targets</span>
+        <span class="sep"> · </span>
+        <span>[SANS] Port 22 scanning elevated — possible SSH brute force campaign from AS-CHOOPA infrastructure</span>
+        <span class="sep"> · </span>
+        <span>[KREBS] Scattered Spider now targeting Malaysian financial sector — spear-phishing via LinkedIn</span>
+        <span class="sep"> · </span>
+        <span>[CISA] KEV Update: CVE-2024-3400 PAN-OS RCE added to Known Exploited Vulnerabilities catalog</span>
+        <span class="sep"> · </span>
+        <span>[THN] New APT group targeting Southeast Asian telecom providers via supply chain attack</span>
+        <span class="sep"> · </span>
+        <span>[BC] LockBit 3.0 ransomware variant observed encrypting backup servers before primary targets</span>
+        <span class="sep"> · </span>
+        <span>[SANS] Port 22 scanning elevated — possible SSH brute force campaign from AS-CHOOPA infrastructure</span>
+        <span class="sep"> · </span>
+        <span>[KREBS] Scattered Spider now targeting Malaysian financial sector — spear-phishing via LinkedIn</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- LEFT SIDEBAR -->
+    <div class="panel sidebar" style="padding:12px 8px;">
+      <div style="font-size:10px;color:var(--text-dim);letter-spacing:1px;padding:0 4px 6px;text-transform:uppercase;">Intel Sources</div>
+
+      <div class="source-item active" onclick="filterSrc('all',this)">
+        <div class="source-dot" style="background:#0078d4"></div>
+        <div class="source-name">All Sources</div>
+        <div class="source-count" id="cnt-all">0</div>
+      </div>
+      <div class="source-item" onclick="filterSrc('THN',this)">
+        <div class="source-dot" style="background:#e74856"></div>
+        <div class="source-name">The Hacker News</div>
+        <div class="source-count" id="cnt-THN">0</div>
+      </div>
+      <div class="source-item" onclick="filterSrc('BC',this)">
+        <div class="source-dot" style="background:#f7630c"></div>
+        <div class="source-name">Bleeping Computer</div>
+        <div class="source-count" id="cnt-BC">0</div>
+      </div>
+      <div class="source-item" onclick="filterSrc('CISA',this)">
+        <div class="source-dot" style="background:#13a10e"></div>
+        <div class="source-name">CISA Advisories</div>
+        <div class="source-count" id="cnt-CISA">0</div>
+      </div>
+      <div class="source-item" onclick="filterSrc('KREBS',this)">
+        <div class="source-dot" style="background:#9d88f0"></div>
+        <div class="source-name">Krebs on Security</div>
+        <div class="source-count" id="cnt-KREBS">0</div>
+      </div>
+      <div class="source-item" onclick="filterSrc('SANS',this)">
+        <div class="source-dot" style="background:#00b4d8"></div>
+        <div class="source-name">SANS ISC</div>
+        <div class="source-count" id="cnt-SANS">0</div>
+      </div>
+
+      <div style="border-top:1px solid var(--border);margin:8px 0;"></div>
+
+      <div style="font-size:10px;color:var(--text-dim);letter-spacing:1px;padding:0 4px 6px;text-transform:uppercase;">Severity Filter</div>
+      <div style="display:flex;flex-direction:column;gap:4px;" id="sev-filters">
+        <button class="filter-btn-sev active" onclick="filterSev('all',this)" style="text-align:left;padding:5px 8px;background:rgba(0,120,212,0.1);border:1px solid rgba(0,120,212,0.3);color:var(--sentinel-blue);border-radius:3px;cursor:pointer;font-size:11px;">All</button>
+        <button class="filter-btn-sev" onclick="filterSev('critical',this)" style="text-align:left;padding:5px 8px;background:transparent;border:1px solid var(--border);color:var(--text-dim);border-radius:3px;cursor:pointer;font-size:11px;">Critical</button>
+        <button class="filter-btn-sev" onclick="filterSev('high',this)" style="text-align:left;padding:5px 8px;background:transparent;border:1px solid var(--border);color:var(--text-dim);border-radius:3px;cursor:pointer;font-size:11px;">High</button>
+        <button class="filter-btn-sev" onclick="filterSev('medium',this)" style="text-align:left;padding:5px 8px;background:transparent;border:1px solid var(--border);color:var(--text-dim);border-radius:3px;cursor:pointer;font-size:11px;">Medium</button>
+      </div>
+
+      <div style="border-top:1px solid var(--border);margin:8px 0;"></div>
+
+      <div style="font-size:10px;color:var(--text-dim);letter-spacing:1px;padding:0 4px 4px;text-transform:uppercase;">Auto-Scroll</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:0 4px;">
+        <div id="scroll-toggle" onclick="toggleScroll()" style="width:34px;height:18px;background:rgba(0,120,212,0.15);border:1px solid rgba(0,120,212,0.3);border-radius:9px;cursor:pointer;display:flex;align-items:center;padding:2px;transition:background 0.2s;">
+          <div id="scroll-knob" style="width:12px;height:12px;border-radius:50%;background:var(--text-dim);transition:all 0.2s;"></div>
+        </div>
+        <span id="scroll-lbl" style="font-size:10px;color:var(--text-dim)">Off</span>
+      </div>
+
+      <div style="border-top:1px solid var(--border);margin:8px 0;"></div>
+
+      <div style="font-size:10px;color:var(--text-dim);letter-spacing:1px;padding:0 4px 6px;text-transform:uppercase;">Next Refresh</div>
+      <div style="text-align:center;padding:4px 0;">
+        <span id="countdown" style="font-size:20px;font-weight:600;color:var(--sentinel-blue);font-variant-numeric:tabular-nums;">15:00</span>
+        <div style="font-size:9px;color:var(--text-dim);margin-top:2px;">minutes remaining</div>
+      </div>
+    </div>
+
+    <!-- FEED -->
+    <div style="display:flex;flex-direction:column;gap:8px;overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <div style="font-size:11px;color:var(--text-dim)" id="feed-count">Loading...</div>
+        <div style="margin-left:auto;font-size:10px;color:var(--text-dim)" id="last-sync">—</div>
+      </div>
+      <div class="feed-area" id="feed-area">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:12px;">
+          <div style="width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--sentinel-blue);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+          <div style="font-size:11px;color:var(--text-dim);letter-spacing:1px;">FETCHING INTELLIGENCE...</div>
+        </div>
+        @keyframes spin { to { transform:rotate(360deg); } }
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-col">
+
+      <div class="panel" style="flex-shrink:0;">
+        <div class="panel-header"><span class="panel-title">Feed Stats</span></div>
+        <div class="panel-body" style="padding:10px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <div style="background:var(--bg-card);border-radius:3px;padding:8px;text-align:center;">
+              <div style="font-size:20px;font-weight:600;color:var(--text-bright)" id="st-total">0</div>
+              <div style="font-size:9px;color:var(--text-dim)">TOTAL</div>
+            </div>
+            <div style="background:var(--bg-card);border-radius:3px;padding:8px;text-align:center;">
+              <div style="font-size:20px;font-weight:600;color:#e74856" id="st-crit">0</div>
+              <div style="font-size:9px;color:var(--text-dim)">CRITICAL</div>
+            </div>
+            <div style="background:var(--bg-card);border-radius:3px;padding:8px;text-align:center;">
+              <div style="font-size:20px;font-weight:600;color:#f7630c" id="st-high">0</div>
+              <div style="font-size:9px;color:var(--text-dim)">HIGH</div>
+            </div>
+            <div style="background:var(--bg-card);border-radius:3px;padding:8px;text-align:center;">
+              <div style="font-size:20px;font-weight:600;color:#13a10e" id="st-src">0</div>
+              <div style="font-size:9px;color:var(--text-dim)">SOURCES</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="flex-shrink:0;">
+        <div class="panel-header"><span class="panel-title">Threat Categories</span></div>
+        <div class="panel-body no-pad" style="padding:4px 0;" id="cat-list"></div>
+      </div>
+
+      <div class="panel" style="flex-shrink:0;">
+        <div class="panel-header"><span class="panel-title">Active IOCs</span><span class="panel-subtitle">Simulated TI feed</span></div>
+        <div class="panel-body no-pad" style="padding:4px 0;overflow-y:auto;max-height:200px;">
+          <div id="ioc-list"></div>
+        </div>
+      </div>
+
+      <div class="panel" style="flex:1;min-height:120px;">
+        <div class="panel-header"><span class="panel-title">7-Day Volume</span></div>
+        <div class="panel-body"><canvas id="volChart"></canvas></div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+const PROXY='https://api.rss2json.com/v1/api.json?rss_url=';
+const REFRESH=15*60*1000;
+const SOURCES=[
+  {id:'THN',  name:'The Hacker News', color:'#e74856', url:'https://feeds.feedburner.com/TheHackersNews'},
+  {id:'BC',   name:'Bleeping Computer',color:'#f7630c',url:'https://www.bleepingcomputer.com/feed/'},
+  {id:'CISA', name:'CISA',            color:'#13a10e', url:'https://www.cisa.gov/cybersecurity-advisories/all.xml'},
+  {id:'KREBS',name:'Krebs',           color:'#9d88f0', url:'https://krebsonsecurity.com/feed/'},
+  {id:'SANS', name:'SANS ISC',        color:'#00b4d8', url:'https://isc.sans.edu/rssfeed_full.xml'}
+];
+const CRIT_KW=['zero-day','0-day','actively exploited','critical vulnerability','ransomware attack','data breach','nation-state','apt ','emergency','patch now'];
+const HIGH_KW=['vulnerability','exploit','malware','phishing','backdoor','trojan','botnet','ddos','supply chain','credential'];
+const MED_KW =['advisory','patch','update','security flaw','threat actor','campaign'];
+const CATS   =['Ransomware','Phishing','Vulnerability','Malware','APT','Data Breach','Supply Chain','Zero-Day','Identity','DDoS'];
+
+let allArts=[],curSrc='all',curSev='all',autoScroll=false,scrollInt=null,countdown=REFRESH/1000;
+
+function getSev(t,d){
+  const s=(t+' '+d).toLowerCase();
+  if(CRIT_KW.some(k=>s.includes(k))) return 'critical';
+  if(HIGH_KW.some(k=>s.includes(k))) return 'high';
+  if(MED_KW.some(k=>s.includes(k)))  return 'medium';
+  return 'low';
+}
+function getKW(t){ return CATS.filter(c=>t.toLowerCase().includes(c.toLowerCase())).slice(0,3); }
+function strip(h){ return h?h.replace(/<[^>]*>/g,'').substring(0,160):''; }
+function ago(d){
+  const diff=Math.floor((Date.now()-new Date(d))/1000);
+  if(diff<60) return diff+'s ago';
+  if(diff<3600) return Math.floor(diff/60)+'m ago';
+  if(diff<86400) return Math.floor(diff/3600)+'h ago';
+  return Math.floor(diff/86400)+'d ago';
+}
+
+async function fetchSrc(s){
+  try{
+    const r=await fetch(`${PROXY}${encodeURIComponent(s.url)}&count=20`);
+    const d=await r.json();
+    if(!d.items) return [];
+    return d.items.map(i=>({
+      srcId:s.id,srcName:s.name,srcColor:s.color,
+      title:i.title||'Untitled',
+      desc:strip(i.description||i.content||''),
+      link:i.link||'#',
+      pubDate:i.pubDate||new Date().toISOString(),
+      sev:getSev(i.title||'',i.description||''),
+      kw:getKW(i.title||'')
+    }));
+  }catch(e){return [];}
+}
+
+async function fetchAll(){
+  const res=await Promise.allSettled(SOURCES.map(s=>fetchSrc(s)));
+  const arts=[];
+  res.forEach(r=>{if(r.status==='fulfilled')arts.push(...r.value);});
+  arts.sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate));
+  return arts;
+}
+
+function renderCards(arts){
+  const feed=document.getElementById('feed-area');
+  if(!arts.length){
+    feed.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text-dim);font-size:12px;">No articles match this filter.</div>`;
+    return;
+  }
+  feed.innerHTML=arts.map((a,i)=>`
+    <div class="news-card sev-${a.sev}" style="animation-delay:${i*0.03}s" onclick="window.open('${a.link}','_blank')">
+      <div class="card-top">
+        <span class="card-source" style="color:${a.srcColor}">${a.srcId}</span>
+        <span class="badge badge-${a.sev}">${a.sev.toUpperCase()}</span>
+        <span class="card-time">${ago(a.pubDate)}</span>
+      </div>
+      <div class="card-title">${a.title}</div>
+      <div class="card-desc">${a.desc}</div>
+      <div class="card-footer">
+        <a class="card-link" href="${a.link}" target="_blank" onclick="event.stopPropagation()">Read full article →</a>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-left:auto">${a.kw.map(k=>`<span class="card-kw">${k}</span>`).join('')}</div>
+      </div>
+    </div>`).join('');
+}
+
+function updateStats(arts){
+  const c={critical:0,high:0,medium:0,low:0};
+  const sc={};
+  arts.forEach(a=>{c[a.sev]++;sc[a.srcId]=(sc[a.srcId]||0)+1;});
+  document.getElementById('st-total').textContent=arts.length;
+  document.getElementById('st-crit').textContent=c.critical;
+  document.getElementById('st-high').textContent=c.high;
+  document.getElementById('st-src').textContent=Object.keys(sc).length;
+  SOURCES.forEach(s=>{const el=document.getElementById('cnt-'+s.id);if(el)el.textContent=sc[s.id]||0;});
+  const allEl=document.getElementById('cnt-all');if(allEl)allEl.textContent=arts.length;
+  updateCats(arts);
+}
+
+function updateCats(arts){
+  const cats={};CATS.forEach(c=>cats[c]=0);
+  arts.forEach(a=>a.kw.forEach(k=>{if(cats[k]!==undefined)cats[k]++;}));
+  const sorted=Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const max=sorted[0]?.[1]||1;
+  document.getElementById('cat-list').innerHTML=sorted.map(([name,cnt])=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.04);">
+      <div style="flex:1;font-size:11px;color:var(--text)">${name}</div>
+      <div style="width:60px;height:3px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;">
+        <div style="width:${Math.round(cnt/max*100)}%;height:100%;background:var(--sentinel-blue);border-radius:2px;"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text-dim);width:20px;text-align:right">${cnt}</div>
+    </div>`).join('');
+}
+
+function applyFilters(){
+  let f=allArts;
+  if(curSrc!=='all') f=f.filter(a=>a.srcId===curSrc);
+  if(curSev!=='all') f=f.filter(a=>a.sev===curSev);
+  document.getElementById('feed-count').textContent=`Showing ${f.length} of ${allArts.length} intelligence items`;
+  renderCards(f);
+}
+
+function filterSrc(id,el){
+  document.querySelectorAll('.source-item').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active'); curSrc=id; applyFilters();
+}
+
+function filterSev(sev,el){
+  document.querySelectorAll('.filter-btn-sev').forEach(e=>{
+    e.style.background='transparent';e.style.borderColor='var(--border)';e.style.color='var(--text-dim)';
+  });
+  el.style.background='rgba(0,120,212,0.1)';el.style.borderColor='rgba(0,120,212,0.3)';el.style.color='var(--sentinel-blue)';
+  curSev=sev; applyFilters();
+}
+
+function toggleScroll(){
+  autoScroll=!autoScroll;
+  const knob=document.getElementById('scroll-knob');
+  const tog=document.getElementById('scroll-toggle');
+  const lbl=document.getElementById('scroll-lbl');
+  if(autoScroll){
+    tog.style.background='rgba(0,120,212,0.4)';knob.style.background='var(--sentinel-blue)';
+    knob.style.marginLeft='16px';lbl.textContent='On';lbl.style.color='var(--sentinel-blue)';
+    let dir=1;
+    scrollInt=setInterval(()=>{
+      const f=document.getElementById('feed-area');
+      f.scrollTop+=dir;
+      if(f.scrollTop+f.clientHeight>=f.scrollHeight-10) dir=-1;
+      if(f.scrollTop<=0) dir=1;
+    },30);
+  } else {
+    tog.style.background='rgba(0,120,212,0.15)';knob.style.background='var(--text-dim)';
+    knob.style.marginLeft='0';lbl.textContent='Off';lbl.style.color='var(--text-dim)';
+    clearInterval(scrollInt);
+  }
+}
+
+function tick(){
+  const n=new Date();
+  document.getElementById('clock').textContent=
+    [n.getHours(),n.getMinutes(),n.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
+}
+
+function updateCountdown(){
+  countdown--;
+  if(countdown<=0){countdown=REFRESH/1000;loadFeeds();}
+  const m=String(Math.floor(countdown/60)).padStart(2,'0');
+  const s=String(countdown%60).padStart(2,'0');
+  document.getElementById('countdown').textContent=`${m}:${s}`;
+}
+
+async function loadFeeds(){
+  document.getElementById('last-sync').textContent='Fetching...';
+  allArts=await fetchAll();
+  if(!allArts.length){
+    document.getElementById('feed-area').innerHTML=`<div style="text-align:center;padding:40px;color:var(--text-dim);">
+      <div style="font-size:28px;color:#e74856;margin-bottom:8px;">[!]</div>
+      <div style="font-size:12px;line-height:1.6;">Unable to reach RSS feeds.<br>Check internet connection.</div>
+      <button onclick="loadFeeds()" style="margin-top:12px;padding:6px 16px;background:transparent;border:1px solid var(--sentinel-blue);color:var(--sentinel-blue);cursor:pointer;border-radius:3px;font-size:11px;">Retry</button>
+    </div>`;
+  } else {
+    updateStats(allArts);applyFilters();
+    const n=new Date();
+    document.getElementById('last-sync').textContent=`Last sync: ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+  }
+  countdown=REFRESH/1000;
+}
+
+function handleLogo(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>{
+    document.getElementById('logo-img').src=ev.target.result;
+    document.getElementById('logo-img').style.display='block';
+    document.querySelector('.topbar-logo-placeholder').style.display='none';
+  };r.readAsDataURL(f);
+}
+
+// IOCs (simulated)
+const iocs=[
+  {type:'IP',  val:'185.220.101.47', conf:'High'},
+  {type:'IP',  val:'45.142.212.100', conf:'High'},
+  {type:'Hash',val:'d41d8cd98f00b204e9800998ecf8427e',conf:'Medium'},
+  {type:'URL', val:'malicious-update[.]com/payload',conf:'High'},
+  {type:'IP',  val:'91.92.251.103',  conf:'Medium'},
+  {type:'Hash',val:'5f4dcc3b5aa765d61d8327deb882cf99',conf:'Low'},
+  {type:'URL', val:'cdn-secure[.]net/dropper',conf:'High'},
+];
+const iocDiv=document.getElementById('ioc-list');
+const confColor={High:'#e74856',Medium:'#f7630c',Low:'#1a90e0'};
+iocs.forEach(i=>{
+  iocDiv.innerHTML+=`<div class="ioc-row">
+    <div class="ioc-type">${i.type}</div>
+    <div class="ioc-val">${i.val}</div>
+    <div class="ioc-conf" style="color:${confColor[i.conf]}">${i.conf}</div>
+  </div>`;
+});
+
+// VOL CHART
+Chart.defaults.color='#6e7f9a';Chart.defaults.font.family='Inter';Chart.defaults.font.size=10;
+new Chart(document.getElementById('volChart'),{
+  type:'bar',
+  data:{
+    labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    datasets:[{data:[42,58,38,71,65,48,83],backgroundColor:'rgba(0,120,212,0.5)',borderColor:'#0078d4',borderWidth:1,borderRadius:2}]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:9}}},
+      y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{font:{size:9}}}
+    }
+  }
+});
+
+setInterval(tick,1000);setInterval(updateCountdown,1000);
+tick();loadFeeds();
+</script>
+</body>
+</html>

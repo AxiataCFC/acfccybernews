@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACFC | SOC Overview Dashboard</title>
+<link rel="stylesheet" href="sentinel.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+.page { display:flex; flex-direction:column; height:100vh; }
+.content { flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr 1fr; gap:8px; padding:8px; overflow:hidden; }
+/* panel spanning */
+.p-map      { grid-column:1; grid-row:1; }
+.p-timeline { grid-column:2; grid-row:1; }
+.p-kpi      { grid-column:3; grid-row:1; }
+.p-countries{ grid-column:1; grid-row:2; }
+.p-types    { grid-column:2; grid-row:2; }
+.p-health   { grid-column:3; grid-row:2; }
+
+/* MAP */
+.map-svg { width:100%; height:100%; }
+.country-bubble { cursor:pointer; transition:r 0.3s; }
+.map-label { font-size:9px; fill:#6e7f9a; font-family:'Inter',sans-serif; }
+.map-value { font-size:10px; fill:#c9d1d9; font-weight:600; font-family:'Inter',sans-serif; }
+
+/* HEALTH */
+.health-row { display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+.health-row:last-child { border:none; }
+.health-name { flex:1; font-size:11px; color:var(--text); }
+.health-track { flex:1; height:4px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; }
+.health-fill  { height:100%; border-radius:2px; transition:width 1s ease; }
+.health-val   { font-size:11px; width:36px; text-align:right; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-placeholder" onclick="document.getElementById('logo-upload').click()">[ LOGO ]</div>
+      <input type="file" id="logo-upload" accept="image/*" onchange="handleLogo(event)">
+      <img id="logo-img" src="" alt="">
+    </div>
+    <div>
+      <div class="topbar-title">Axiata Cyber Fusion Center</div>
+      <div class="topbar-sub">Microsoft Sentinel — SOC Overview</div>
+    </div>
+    <nav class="topbar-nav">
+      <a href="index.html"       class="nav-item active">Overview</a>
+      <a href="incidents.html"     class="nav-item">Exploit Movement</a>
+      <a href="edr.html"           class="nav-item">EDR / XDR</a>
+      <a href="acta.html"          class="nav-item">ACTA</a>
+      <a href="intel.html"       class="nav-item">Threat Intel</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="topbar-badge"><span class="live-dot"></span>LIVE</span>
+      <span class="topbar-clock" id="clock">--:--:--</span>
+    </div>
+  </div>
+
+  <!-- 6-PANEL GRID -->
+  <div class="content">
+
+    <!-- PANEL 1: WORLD THREAT MAP -->
+    <div class="panel p-map">
+      <div class="panel-header">
+        <span class="status-dot green pulse"></span>
+        <span class="panel-title">Top Attack Origins</span>
+        <span class="panel-subtitle">Last 24h · 4,341 events</span>
+      </div>
+      <div class="panel-body no-pad">
+        <svg class="map-svg" viewBox="0 0 520 240" id="map-svg" preserveAspectRatio="xMidYMid meet">
+          <!-- simplified world outline paths -->
+          <rect width="520" height="240" fill="#0d1117"/>
+          <!-- continent shapes approximate -->
+          <!-- North America -->
+          <path d="M60,50 Q90,40 120,55 Q140,65 145,85 Q150,105 130,120 Q110,135 90,125 Q70,115 55,95 Q45,75 60,50Z" fill="#1a2030" stroke="#252d3f" stroke-width="0.5"/>
+          <!-- South America -->
+          <path d="M110,130 Q130,125 140,140 Q148,158 145,180 Q140,200 125,210 Q110,215 100,200 Q88,182 90,162 Q92,142 110,130Z" fill="#1a2030" stroke="#252d3f" stroke-width="0.5"/>
+          <!-- Europe -->
+          <path d="M220,40 Q245,35 265,45 Q278,55 275,70 Q270,82 255,85 Q238,88 222,78 Q208,68 210,55 Q213,44 220,40Z" fill="#1a2030" stroke="#252d3f" stroke-width="0.5"/>
+          <!-- Africa -->
+          <path d="M225,95 Q248,88 265,98 Q278,110 278,130 Q276,155 265,170 Q252,182 238,178 Q222,172 215,155 Q208,136 210,115 Q213,100 225,95Z" fill="#1a2030" stroke="#252d3f" stroke-width="0.5"/>
+          <!-- Middle East -->
+          <path d="M280,75 Q298,70 312,78 Q322,86 320,98 Q316,108 304,110 Q290,111 282,103 Q275,93 278,82Z" fill="#1a2030" stroke="#252d3f" stroke-width="0.5"/>
+          <!-- Asia -->
+          <path d="M318,35 Q370,28 410,38 Q440,48 448,70 Q452,90 440,105 Q424,118 400,115 Q375,112 355,100 Q332,85 320,68 Q310,52 318,35Z" fill="#1a2030" stroke="#252d3f" stroke-width="0.5"/>
+          <!-- SEA -->
+          <path d="M380,118 Q405,112 422,122 Q432,132 428,148 Q422,160 408,162 Q392,163 382,152 Q372,140 375,128Z" fill="#1a2030" stroke="#252d3f" stroke-width="0.5"/>
+          <!-- Australia -->
+          <path d="M398,175 Q422,168 440,178 Q452,188 450,202 Q446,216 432,220 Q416,222 404,212 Q392,200 393,187Z" fill="#1a2030" stroke="#252d3f" stroke-width="0.5"/>
+
+          <!-- Attack lines from various countries to Malaysia (target) -->
+          <!-- Malaysia approx at 410,138 -->
+          <line x1="108" y1="78"  x2="405" y2="132" stroke="rgba(231,72,86,0.25)" stroke-width="0.8" stroke-dasharray="3,3"/>
+          <line x1="240" y1="62"  x2="405" y2="132" stroke="rgba(0,120,212,0.2)"  stroke-width="0.8" stroke-dasharray="3,3"/>
+          <line x1="255" y1="52"  x2="405" y2="132" stroke="rgba(247,99,12,0.2)"  stroke-width="0.8" stroke-dasharray="3,3"/>
+          <line x1="370" y1="58"  x2="405" y2="132" stroke="rgba(0,120,212,0.2)"  stroke-width="0.8" stroke-dasharray="3,3"/>
+          <line x1="395" y1="62"  x2="405" y2="132" stroke="rgba(123,104,238,0.2)" stroke-width="0.8" stroke-dasharray="3,3"/>
+          <line x1="128" y1="165" x2="405" y2="132" stroke="rgba(0,180,216,0.2)"  stroke-width="0.8" stroke-dasharray="3,3"/>
+
+          <!-- Bubbles — sized by attack count -->
+          <!-- US -->
+          <circle cx="108" cy="78"  r="16" fill="rgba(231,72,86,0.2)"  stroke="#e74856" stroke-width="1" class="country-bubble"/>
+          <text x="108" y="76"  text-anchor="middle" class="map-value" fill="#e74856">1.04K</text>
+          <text x="108" y="86"  text-anchor="middle" class="map-label">US</text>
+          <!-- UK -->
+          <circle cx="228" cy="52"  r="9"  fill="rgba(0,120,212,0.2)"  stroke="#0078d4" stroke-width="1" class="country-bubble"/>
+          <text x="228" y="50"  text-anchor="middle" class="map-value" fill="#1a90e0" style="font-size:8px">708</text>
+          <text x="228" y="59"  text-anchor="middle" class="map-label">UK</text>
+          <!-- Germany -->
+          <circle cx="248" cy="58"  r="7"  fill="rgba(247,99,12,0.2)"  stroke="#f7630c" stroke-width="1" class="country-bubble"/>
+          <text x="248" y="56"  text-anchor="middle" class="map-value" fill="#f7630c" style="font-size:8px">426</text>
+          <text x="248" y="65"  text-anchor="middle" class="map-label">DE</text>
+          <!-- China -->
+          <circle cx="395" cy="70"  r="8"  fill="rgba(0,120,212,0.2)"  stroke="#0078d4" stroke-width="1" class="country-bubble"/>
+          <text x="395" y="68"  text-anchor="middle" class="map-value" fill="#1a90e0" style="font-size:8px">401</text>
+          <text x="395" y="77"  text-anchor="middle" class="map-label">CN</text>
+          <!-- Russia -->
+          <circle cx="355" cy="52"  r="7"  fill="rgba(123,104,238,0.2)" stroke="#7b68ee" stroke-width="1" class="country-bubble"/>
+          <text x="355" y="50"  text-anchor="middle" class="map-value" fill="#9d88f0" style="font-size:8px">299</text>
+          <text x="355" y="59"  text-anchor="middle" class="map-label">RU</text>
+          <!-- Brazil -->
+          <circle cx="128" cy="168" r="6"  fill="rgba(0,180,216,0.2)"  stroke="#00b4d8" stroke-width="1" class="country-bubble"/>
+          <text x="128" y="175"  text-anchor="middle" class="map-label">BR</text>
+          <!-- Malaysia TARGET -->
+          <circle cx="405" cy="132" r="10" fill="rgba(19,161,14,0.3)"  stroke="#13a10e" stroke-width="1.5"/>
+          <circle cx="405" cy="132" r="16" fill="none" stroke="rgba(19,161,14,0.2)" stroke-width="1" stroke-dasharray="2,2"/>
+          <text x="405" y="130"  text-anchor="middle" class="map-value" fill="#13a10e" style="font-size:9px">MY</text>
+          <text x="405" y="148"  text-anchor="middle" class="map-label" fill="#13a10e">TARGET</text>
+
+          <!-- Legend -->
+          <circle cx="18" cy="210" r="5" fill="rgba(231,72,86,0.3)" stroke="#e74856" stroke-width="1"/>
+          <text x="28" y="214" class="map-label" fill="#6e7f9a">Attack origin</text>
+          <circle cx="110" cy="210" r="5" fill="rgba(19,161,14,0.3)" stroke="#13a10e" stroke-width="1"/>
+          <text x="120" y="214" class="map-label" fill="#6e7f9a">Target (MY)</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- PANEL 2: ALERT TIMELINE -->
+    <div class="panel p-timeline">
+      <div class="panel-header">
+        <span class="panel-title">Alert Volume — 7 Days</span>
+        <span class="panel-subtitle">Scheduled Analytics · 2.45K total</span>
+      </div>
+      <div class="panel-body">
+        <div class="chart-wrap"><canvas id="timelineChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- PANEL 3: KPI TILES -->
+    <div class="panel p-kpi">
+      <div class="panel-header">
+        <span class="panel-title">Security KPIs</span>
+        <span class="panel-subtitle">Live counters</span>
+      </div>
+      <div class="panel-body">
+        <div class="kpi-grid">
+          <div class="kpi-tile red">
+            <div class="kpi-label">Critical Alerts</div>
+            <div class="kpi-value red" id="kpi-critical">247</div>
+            <div class="kpi-delta up">▲ 18% vs yesterday</div>
+          </div>
+          <div class="kpi-tile amber">
+            <div class="kpi-label">High Severity</div>
+            <div class="kpi-value amber">583</div>
+            <div class="kpi-delta up">▲ 6%</div>
+          </div>
+          <div class="kpi-tile blue">
+            <div class="kpi-label">Open Incidents</div>
+            <div class="kpi-value blue">42</div>
+            <div class="kpi-delta">— unchanged</div>
+          </div>
+          <div class="kpi-tile green">
+            <div class="kpi-label">MTTR (hrs)</div>
+            <div class="kpi-value green">3.2</div>
+            <div class="kpi-delta down">▼ 12% improved</div>
+          </div>
+          <div class="kpi-tile purple">
+            <div class="kpi-label">Data Ingested</div>
+            <div class="kpi-value purple">18.5GB</div>
+            <div class="kpi-delta">daily avg</div>
+          </div>
+          <div class="kpi-tile teal">
+            <div class="kpi-label">Rules Active</div>
+            <div class="kpi-value" style="color:var(--accent-teal)">134</div>
+            <div class="kpi-delta">analytics rules</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 4: TOP ATTACK COUNTRIES -->
+    <div class="panel p-countries">
+      <div class="panel-header">
+        <span class="panel-title">Top Attack Countries</span>
+        <span class="panel-subtitle">By event count</span>
+      </div>
+      <div class="panel-body">
+        <div class="chart-wrap"><canvas id="countriesChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- PANEL 5: ATTACK TYPE BREAKDOWN -->
+    <div class="panel p-types">
+      <div class="panel-header">
+        <span class="panel-title">Attack Type Breakdown</span>
+        <span class="panel-subtitle">Last 24h classification</span>
+      </div>
+      <div class="panel-body" style="display:flex;align-items:center;gap:16px;">
+        <div style="flex:0 0 140px;height:140px;position:relative;">
+          <canvas id="donutChart"></canvas>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+            <div style="font-size:18px;font-weight:600;color:var(--text-bright)">16.6K</div>
+            <div style="font-size:9px;color:var(--text-dim)">TOTAL</div>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:5px;" id="donut-legend"></div>
+      </div>
+    </div>
+
+    <!-- PANEL 6: SOC HEALTH -->
+    <div class="panel p-health">
+      <div class="panel-header">
+        <span class="panel-title">SOC Health Monitor</span>
+        <span class="panel-subtitle">Connector & coverage status</span>
+      </div>
+      <div class="panel-body" style="overflow-y:auto;">
+        <div style="margin-bottom:10px;">
+          <div style="font-size:10px;color:var(--text-dim);letter-spacing:0.5px;margin-bottom:6px;">DATA CONNECTORS</div>
+          <div id="connectors"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-dim);letter-spacing:0.5px;margin-bottom:6px;">COVERAGE</div>
+          <div id="coverage"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// CLOCK
+function tick() {
+  const n=new Date();
+  document.getElementById('clock').textContent=
+    [n.getHours(),n.getMinutes(),n.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
+}
+setInterval(tick,1000); tick();
+
+// LOGO
+function handleLogo(e) {
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=ev=>{
+    const img=document.getElementById('logo-img');
+    img.src=ev.target.result; img.style.display='block';
+    document.querySelector('.topbar-logo-placeholder').style.display='none';
+  }; r.readAsDataURL(f);
+}
+
+const C = Chart.defaults;
+C.color = '#6e7f9a';
+C.font.family = 'Inter';
+C.font.size = 10;
+
+// TIMELINE CHART
+const days = ['Apr 16','Apr 17','Apr 18','Apr 19','Apr 20','Apr 21','Apr 22'];
+new Chart(document.getElementById('timelineChart'), {
+  type:'line',
+  data:{
+    labels:days,
+    datasets:[
+      { label:'Critical', data:[82,105,91,138,115,178,247], borderColor:'#e74856', backgroundColor:'rgba(231,72,86,0.08)', fill:true, tension:0.4, pointRadius:3, borderWidth:2 },
+      { label:'High',     data:[210,245,198,312,278,385,583], borderColor:'#f7630c', backgroundColor:'rgba(247,99,12,0.05)', fill:true, tension:0.4, pointRadius:3, borderWidth:2 },
+      { label:'Medium',   data:[380,420,355,490,445,560,680], borderColor:'#0078d4', backgroundColor:'rgba(0,120,212,0.05)', fill:true, tension:0.4, pointRadius:3, borderWidth:1.5 }
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    interaction:{ mode:'index', intersect:false },
+    plugins:{ legend:{ position:'top', labels:{ boxWidth:10, padding:10, font:{size:10} } } },
+    scales:{
+      x:{ grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ font:{size:9} } },
+      y:{ grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ font:{size:9} } }
+    }
+  }
+});
+
+// COUNTRIES CHART
+new Chart(document.getElementById('countriesChart'), {
+  type:'bar',
+  data:{
+    labels:['Singapore','United States','Sri Lanka','Malaysia','India','Indonesia','Germany','Bangladesh'],
+    datasets:[{ data:[1044,708,426,401,299,274,237,221], backgroundColor:'rgba(0,120,212,0.7)', borderColor:'#0078d4', borderWidth:1, borderRadius:2 }]
+  },
+  options:{
+    indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ display:false } },
+    scales:{
+      x:{ grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ font:{size:9} } },
+      y:{ grid:{ display:false }, ticks:{ font:{size:10} } }
+    }
+  }
+});
+
+// DONUT CHART
+const donutData = [
+  { label:'Phishing',        value:4820, color:'#0078d4' },
+  { label:'Malware',         value:3250, color:'#7b68ee' },
+  { label:'Credential',      value:2890, color:'#e74856' },
+  { label:'Ransomware',      value:1640, color:'#f7630c' },
+  { label:'Supply Chain',    value:1200, color:'#00b4d8' },
+  { label:'Other',           value:2800, color:'#3d4f6e' },
+];
+new Chart(document.getElementById('donutChart'), {
+  type:'doughnut',
+  data:{
+    labels:donutData.map(d=>d.label),
+    datasets:[{ data:donutData.map(d=>d.value), backgroundColor:donutData.map(d=>d.color), borderWidth:0, hoverOffset:4 }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false, cutout:'68%',
+    plugins:{ legend:{ display:false } }
+  }
+});
+const legend = document.getElementById('donut-legend');
+donutData.forEach(d => {
+  const total = donutData.reduce((a,b)=>a+b.value,0);
+  const pct = Math.round(d.value/total*100);
+  legend.innerHTML += `<div style="display:flex;align-items:center;gap:6px;">
+    <div style="width:8px;height:8px;border-radius:2px;background:${d.color};flex-shrink:0"></div>
+    <div style="flex:1;font-size:11px;color:var(--text)">${d.label}</div>
+    <div style="font-size:11px;color:var(--text-dim)">${pct}%</div>
+  </div>`;
+});
+
+// CONNECTORS
+const connectors = [
+  { name:'Microsoft Defender XDR', status:'green', latency:'1.2s' },
+  { name:'Azure AD / Entra ID',    status:'green', latency:'0.8s' },
+  { name:'Office 365',             status:'green', latency:'1.5s' },
+  { name:'Palo Alto Firewall',     status:'green', latency:'2.1s' },
+  { name:'Tenable.io',             status:'amber', latency:'Delayed 12m' },
+  { name:'Syslog (Linux)',         status:'green', latency:'0.6s' },
+];
+const connDiv = document.getElementById('connectors');
+connectors.forEach(c => {
+  connDiv.innerHTML += `<div class="health-row">
+    <span class="status-dot ${c.status}"></span>
+    <span class="health-name">${c.name}</span>
+    <span style="font-size:10px;color:var(--text-dim)">${c.latency}</span>
+  </div>`;
+});
+
+// COVERAGE
+const coverage = [
+  { name:'EDR Coverage',      pct:94, color:'#13a10e' },
+  { name:'Log Ingestion',     pct:88, color:'#0078d4' },
+  { name:'UEBA Active',       pct:76, color:'#7b68ee' },
+  { name:'Threat Intel Feed', pct:100,color:'#13a10e' },
+];
+const covDiv = document.getElementById('coverage');
+coverage.forEach(c => {
+  covDiv.innerHTML += `<div class="health-row">
+    <span class="health-name">${c.name}</span>
+    <div class="health-track"><div class="health-fill" style="width:${c.pct}%;background:${c.color}"></div></div>
+    <span class="health-val" style="color:${c.color}">${c.pct}%</span>
+  </div>`;
+});
+
+// Animate KPI counter
+let kpi = 247;
+setInterval(() => {
+  kpi += Math.floor(Math.random()*3);
+  document.getElementById('kpi-critical').textContent = kpi;
+}, 8000);
+// =====================
+// 🔥 SAFE DYNAMIC ENGINE (NO STRUCTURE CHANGE)
+// =====================
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min) + min);
+}
+
+// =====================
+// 📊 TIMELINE (Alert Volume)
+// =====================
+setInterval(() => {
+  try {
+    const chart = Chart.getChart("timelineChart");
+    if (!chart) return;
+
+    chart.data.datasets.forEach(ds => {
+      ds.data.shift();
+      ds.data.push(rand(100, 700));
+    });
+
+    chart.update();
+  } catch(e){}
+}, 4000);
+
+
+// =====================
+// 🌍 TOP ATTACK COUNTRIES
+// =====================
+setInterval(() => {
+  try {
+    const chart = Chart.getChart("countriesChart");
+    if (!chart) return;
+
+    chart.data.datasets[0].data =
+      chart.data.datasets[0].data.map(v => v + rand(-30, 60));
+
+    chart.update();
+  } catch(e){}
+}, 5000);
+
+
+// =====================
+// 🍩 ATTACK TYPE (Donut)
+// =====================
+setInterval(() => {
+  try {
+    const chart = Chart.getChart("donutChart");
+    if (!chart) return;
+
+    chart.data.datasets[0].data =
+      chart.data.datasets[0].data.map(v => v + rand(-150, 200));
+
+    chart.update();
+
+    // update total center
+    const total = chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
+    const center = document.querySelector('.panel.p-types .panel-body div div');
+    if (center) center.textContent = Math.round(total/1000) + "K";
+
+  } catch(e){}
+}, 6000);
+
+
+// =====================
+// 🔢 KPI (ALL tiles)
+// =====================
+setInterval(() => {
+  document.querySelectorAll('.kpi-value').forEach(el => {
+
+    let val = parseFloat(el.textContent) || 0;
+    let change = Math.random()*4 - 1.5;
+
+    val += change;
+
+    el.classList.add('updating');
+    el.textContent = Math.round(val * 10) / 10;
+
+    setTimeout(()=>el.classList.remove('updating'), 300);
+
+  });
+}, 5000);
+
+
+// =====================
+// ❤️ SOC HEALTH (bars move)
+// =====================
+setInterval(() => {
+  document.querySelectorAll('.health-fill').forEach(bar => {
+
+    let current = parseInt(bar.style.width) || 70;
+
+    let newVal = current + rand(-2, 3);
+    newVal = Math.max(60, Math.min(100, newVal));
+
+    bar.style.width = newVal + "%";
+
+    const valText = bar.parentElement.nextElementSibling;
+    if (valText) valText.textContent = newVal + "%";
+
+  });
+}, 7000);
+
+
+// =====================
+// 🌊 MAP ATTACK FLOW (ADD ANIMATION)
+// =====================
+document.querySelectorAll('#map-svg line').forEach(line => {
+  line.innerHTML = `
+    <animate attributeName="stroke-dashoffset"
+             from="0" to="8"
+             dur="0.6s"
+             repeatCount="indefinite"/>
+  `;
+});
+</script>
+</body>
+</html>

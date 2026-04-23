@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACFC | ACTA Weekly</title>
+<link rel="stylesheet" href="sentinel.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+.page { display:flex; flex-direction:column; height:100vh; }
+.content { flex:1; display:grid; grid-template-columns:1fr 320px; grid-template-rows:1fr; gap:8px; padding:8px; overflow:hidden; }
+.left-col  { display:flex; flex-direction:column; gap:8px; overflow:hidden; }
+.right-col { display:flex; flex-direction:column; gap:8px; overflow:hidden; }
+
+/* WEEK HEADER */
+.week-header {
+  display:flex; align-items:center; gap:12px;
+  padding:10px 16px; background:var(--bg-card);
+  border:1px solid var(--border); border-radius:4px;
+  flex-shrink:0;
+}
+.week-badge {
+  font-size:11px; font-weight:600; padding:4px 12px;
+  background:rgba(0,120,212,0.2); color:var(--sentinel-blue);
+  border:1px solid rgba(0,120,212,0.4); border-radius:3px;
+  letter-spacing:1px; white-space:nowrap;
+}
+.week-title { font-size:14px; font-weight:600; color:var(--text-bright); }
+.week-sub   { font-size:11px; color:var(--text-dim); }
+.week-stats { margin-left:auto; display:flex; gap:16px; }
+.week-stat  { text-align:center; }
+.week-stat-num { font-size:18px; font-weight:600; color:var(--text-bright); display:block; }
+.week-stat-lbl { font-size:9px; color:var(--text-dim); letter-spacing:0.5px; }
+
+/* ACTA CARDS */
+.acta-grid { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; }
+.acta-grid::-webkit-scrollbar { width:4px; }
+
+.acta-card {
+  background:var(--bg-panel); border:1px solid var(--border);
+  border-left:4px solid transparent; border-radius:4px;
+  padding:14px 16px; cursor:pointer; transition:all 0.15s;
+}
+.acta-card:hover { background:var(--bg-hover); border-color:rgba(0,120,212,0.25); }
+.acta-card.tlp-red    { border-left-color:#f1707b; }
+.acta-card.tlp-amber  { border-left-color:#ff8c00; }
+.acta-card.tlp-green  { border-left-color:#16c60c; }
+.acta-card.tlp-white  { border-left-color:#8b949e; }
+
+.acta-header { display:flex; align-items:flex-start; gap:8px; margin-bottom:8px; }
+.acta-num    { font-family:monospace; font-size:11px; color:var(--sentinel-blue); white-space:nowrap; flex-shrink:0; }
+.acta-title  { font-size:13px; font-weight:600; color:var(--text-bright); flex:1; line-height:1.35; }
+.acta-meta   { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+
+.acta-body   { font-size:11px; color:var(--text-dim); line-height:1.6; margin-bottom:10px; }
+
+.acta-footer { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.acta-opco-label { font-size:10px; color:var(--text-dim); letter-spacing:0.5px; white-space:nowrap; }
+.opco-tag {
+  font-size:10px; padding:2px 8px; border-radius:3px;
+  background:rgba(0,120,212,0.12); color:#2899f5;
+  border:1px solid rgba(0,120,212,0.25);
+}
+.opco-tag.affected {
+  background:rgba(241,112,123,0.12); color:#f1707b;
+  border-color:rgba(241,112,123,0.25);
+}
+
+.tlp-badge {
+  font-size:9px; font-weight:700; padding:2px 7px; border-radius:2px;
+  letter-spacing:1px; flex-shrink:0;
+}
+.tlp-RED   { background:rgba(241,112,123,0.2); color:#f1707b; border:1px solid rgba(241,112,123,0.4); }
+.tlp-AMBER { background:rgba(255,140,0,0.2);   color:#ff8c00; border:1px solid rgba(255,140,0,0.4); }
+.tlp-GREEN { background:rgba(22,198,12,0.15);  color:#16c60c; border:1px solid rgba(22,198,12,0.3); }
+.tlp-WHITE { background:rgba(139,148,158,0.15);color:#8b949e; border:1px solid rgba(139,148,158,0.3); }
+
+/* RIGHT PANEL */
+.threat-actor-card {
+  background:var(--bg-card); border:1px solid var(--border); border-radius:3px;
+  padding:10px 12px; margin-bottom:6px;
+}
+.ta-name   { font-size:12px; font-weight:600; color:var(--text-bright); margin-bottom:4px; }
+.ta-origin { font-size:10px; color:var(--text-dim); }
+.ta-ttps   { display:flex; flex-wrap:wrap; gap:3px; margin-top:5px; }
+.ta-ttp    { font-size:9px; padding:1px 6px; background:rgba(135,100,184,0.12); color:#b09de0; border:1px solid rgba(135,100,184,0.2); border-radius:2px; }
+
+/* TIMELINE */
+.tl-row { display:flex; gap:10px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:11px; }
+.tl-row:last-child { border:none; }
+.tl-week { font-size:10px; color:var(--text-dim); white-space:nowrap; width:52px; flex-shrink:0; }
+.tl-dot2 { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:2px; }
+.tl-text { color:var(--text); line-height:1.4; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-placeholder" onclick="document.getElementById('logo-upload').click()">[ LOGO ]</div>
+      <input type="file" id="logo-upload" accept="image/*" onchange="handleLogo(event)">
+      <img id="logo-img" src="" alt="">
+    </div>
+    <div>
+      <div class="topbar-title">Axiata Cyber Fusion Center</div>
+      <div class="topbar-sub">ACTA — Cyber Threat Activity Weekly Bulletin</div>
+    </div>
+    <nav class="topbar-nav">
+      <a href="index.html"         class="nav-item">Overview</a>
+      <a href="incidents.html"     class="nav-item">Exploit Movement</a>
+      <a href="edr.html"           class="nav-item">EDR / XDR</a>
+      <a href="acta.html"          class="nav-item active">ACTA</a>
+      <a href="intel.html"         class="nav-item">Threat Intel</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="topbar-badge"><span class="live-dot"></span>LIVE</span>
+      <span class="topbar-clock" id="clock">--:--:--</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- LEFT: ACTA FEED -->
+    <div class="left-col">
+
+      <!-- WEEK HEADER -->
+      <div class="week-header">
+        <div class="week-badge">WEEK 16 · 2025</div>
+        <div>
+          <div class="week-title">ACFC Cyber Threat Activity Report</div>
+          <div class="week-sub">14 Apr 2025 — 20 Apr 2025 &nbsp;·&nbsp; Published by ACFC Threat Intelligence Unit</div>
+        </div>
+        <div class="week-stats">
+          <div class="week-stat">
+            <span class="week-stat-num" style="color:#f1707b">4</span>
+            <span class="week-stat-lbl">CRITICAL</span>
+          </div>
+          <div class="week-stat">
+            <span class="week-stat-num" style="color:#ff8c00">6</span>
+            <span class="week-stat-lbl">HIGH</span>
+          </div>
+          <div class="week-stat">
+            <span class="week-stat-num" style="color:#16c60c">3</span>
+            <span class="week-stat-lbl">OPCOS AFFECTED</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTA CARDS -->
+      <div class="acta-grid" id="acta-grid"></div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-col">
+
+      <div class="panel" style="flex-shrink:0;">
+        <div class="panel-header"><span class="panel-title">Threat Actor Spotlight</span><span class="panel-subtitle">This week</span></div>
+        <div class="panel-body no-pad" style="padding:8px;overflow-y:auto;">
+          <div id="ta-list"></div>
+        </div>
+      </div>
+
+      <div class="panel" style="flex-shrink:0;">
+        <div class="panel-header"><span class="panel-title">Affected OpCos / Clients</span></div>
+        <div class="panel-body" style="display:flex;flex-direction:column;gap:6px;" id="opco-summary"></div>
+      </div>
+
+      <div class="panel" style="flex:1;">
+        <div class="panel-header"><span class="panel-title">ACTA History — 8 Weeks</span><span class="panel-subtitle">Alert volume trend</span></div>
+        <div class="panel-body"><div class="chart-wrap"><canvas id="actaChart"></canvas></div></div>
+      </div>
+
+      <div class="panel" style="flex-shrink:0;">
+        <div class="panel-header"><span class="panel-title">Recent ACTA Entries</span></div>
+        <div class="panel-body no-pad" style="padding:4px 10px;overflow-y:auto;max-height:150px;">
+          <div id="acta-history"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function tick() {
+  const n=new Date();
+  document.getElementById('clock').textContent=
+    [n.getHours(),n.getMinutes(),n.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
+}
+setInterval(tick,1000); tick();
+
+function handleLogo(e) {
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=ev=>{
+    document.getElementById('logo-img').src=ev.target.result;
+    document.getElementById('logo-img').style.display='block';
+    document.querySelector('.topbar-logo-placeholder').style.display='none';
+  }; r.readAsDataURL(f);
+}
+
+Chart.defaults.color='#8b949e'; Chart.defaults.font.family='Inter'; Chart.defaults.font.size=10;
+
+// ACTA DATA — simulated realistic weekly entries
+const actaEntries = [
+  {
+    id:'ACTA-2025-W16-001', tlp:'RED', sev:'critical',
+    title:'Scattered Spider Targeting Malaysian Telco Sector via Spear-Phishing',
+    summary:'Threat actor Scattered Spider (UNC3944) has been observed conducting targeted spear-phishing campaigns against Malaysian telecommunications providers. Initial access achieved via LinkedIn-based social engineering followed by SIM-swapping. OpCos in MY and ID confirmed targeted.',
+    opcos:['Axiata MY','Robi','XL Axiata','Dialog'],
+    affected:['Axiata MY','XL Axiata'],
+    tags:['Initial Access','Credential Access','Social Engineering'],
+  },
+  {
+    id:'ACTA-2025-W16-002', tlp:'RED', sev:'critical',
+    title:'Active Exploitation of PAN-OS GlobalProtect Zero-Day (CVE-2024-3400)',
+    summary:'CISA has confirmed active in-the-wild exploitation of CVE-2024-3400 affecting PAN-OS versions 10.2, 11.0 and 11.1. Remote unauthenticated code execution via GlobalProtect gateway. Palo Alto has released hotfixes; patching required immediately. ACFC has confirmed 3 assets exposed.',
+    opcos:['Axiata MY','Celcom','edotco'],
+    affected:['Axiata MY'],
+    tags:['CVE-2024-3400','RCE','PAN-OS','Zero-Day'],
+  },
+  {
+    id:'ACTA-2025-W16-003', tlp:'AMBER', sev:'high',
+    title:'LockBit 3.0 Variant Targeting ASEAN Financial and Telco Sector',
+    summary:'New LockBit 3.0 builder variant observed with improved defense evasion targeting ASEAN enterprises. Pre-ransomware activity includes backup deletion and shadow copy removal 24–48h before encryption. ACFC observed staging activity consistent with this TTPs in WS-BACKUP environment.',
+    opcos:['Axiata MY','Robi','Smart'],
+    affected:['Axiata MY'],
+    tags:['Ransomware','LockBit','Backup Deletion','Data Exfil'],
+  },
+  {
+    id:'ACTA-2025-W16-004', tlp:'AMBER', sev:'high',
+    title:'Supply Chain Attack via Compromised NPM Package — axiata-utils Impersonator',
+    summary:'A typosquatted NPM package mimicking internal Axiata tooling was discovered in the wild containing a reverse shell payload. Package downloaded 847 times before takedown. DevOps and CI/CD pipelines should audit package.json files across all repos immediately.',
+    opcos:['Axiata Group','Axiata MY'],
+    affected:[],
+    tags:['Supply Chain','NPM','Typosquat','DevSecOps'],
+  },
+  {
+    id:'ACTA-2025-W16-005', tlp:'AMBER', sev:'high',
+    title:'Credential Stuffing Campaign — Axiata Customer Portal',
+    summary:'Automated credential stuffing using breach data from Telegram marketplaces targeting Axiata customer portal login endpoints. ~12,400 login attempts over 48h from rotating residential proxies. WAF rules updated; Entra ID Conditional Access policies reviewed.',
+    opcos:['Axiata MY','Celcom','Boost'],
+    affected:['Celcom'],
+    tags:['Credential Stuffing','Brute Force','Account Takeover'],
+  },
+  {
+    id:'ACTA-2025-W16-006', tlp:'GREEN', sev:'medium',
+    title:'DNS Tunneling Activity Detected — Possible C2 Communication',
+    summary:'ACFC threat hunting identified DNS tunneling pattern consistent with Cobalt Strike DNS C2 profiles on multiple CORP workstations. Queries to algorithmically-generated subdomains of a freshly-registered .xyz domain. IOCs shared with EDR and DNS filtering teams.',
+    opcos:['Axiata MY'],
+    affected:[],
+    tags:['C2','DNS Tunneling','Cobalt Strike','Threat Hunting'],
+  },
+  {
+    id:'ACTA-2025-W16-007', tlp:'GREEN', sev:'medium',
+    title:'Insider Threat Indicator — Bulk Data Download Prior to Resignation',
+    summary:'UEBA alert triggered on account of employee with pending resignation accessing and downloading bulk SharePoint content outside normal working hours over 3-day period. DLP policy applied; HR and legal notified per procedure. Account suspended pending review.',
+    opcos:['Axiata MY'],
+    affected:[],
+    tags:['Insider Threat','UEBA','DLP','SharePoint'],
+  },
+  {
+    id:'ACTA-2025-W16-008', tlp:'WHITE', sev:'low',
+    title:'CISA KEV Update — 4 New Entries Added This Week',
+    summary:'CISA added 4 new entries to the Known Exploited Vulnerabilities catalog this week: CVE-2024-3400 (PAN-OS), CVE-2024-21762 (FortiOS), CVE-2024-1709 (ConnectWise), CVE-2024-6387 (OpenSSH). All patch deadlines within 21 days for federal agencies; ACFC recommends immediate patching.',
+    opcos:['All OpCos'],
+    affected:[],
+    tags:['CISA KEV','Patch Advisory','CVE'],
+  },
+];
+
+const grid = document.getElementById('acta-grid');
+actaEntries.forEach(a => {
+  const tlpClass = `tlp-${a.tlp}`;
+  const opcoTags = a.opcos.map(o =>
+    `<span class="opco-tag ${a.affected.includes(o)?'affected':''}">${o}${a.affected.includes(o)?' ⚠':''}</span>`
+  ).join('');
+  const tagBadges = a.tags.map(t=>`<span class="badge badge-info" style="font-size:9px">${t}</span>`).join('');
+
+  grid.innerHTML += `<div class="acta-card ${tlpClass.toLowerCase()}">
+    <div class="acta-header">
+      <span class="acta-num">${a.id}</span>
+      <span class="acta-title">${a.title}</span>
+      <div class="acta-meta">
+        <span class="tlp-badge tlp-${a.tlp}">TLP:${a.tlp}</span>
+        <span class="badge badge-${a.sev==='critical'?'critical':a.sev==='high'?'high':a.sev==='medium'?'medium':'low'}">${a.sev}</span>
+      </div>
+    </div>
+    <div class="acta-body">${a.summary}</div>
+    <div class="acta-footer">
+      <span class="acta-opco-label">OPCOS:</span>
+      ${opcoTags}
+      <div style="margin-left:auto;display:flex;gap:4px;flex-wrap:wrap">${tagBadges}</div>
+    </div>
+  </div>`;
+});
+
+// THREAT ACTORS
+const actors = [
+  { name:'Scattered Spider (UNC3944)', origin:'EN-speaking, no nation-state', ttps:['SIM Swap','Social Eng','Identity Abuse','MFA Bypass'] },
+  { name:'APT41 / Winnti', origin:'China-nexus', ttps:['Supply Chain','Backdoor','Espionage','Living off the land'] },
+  { name:'LockBit Affiliate', origin:'RaaS affiliate network', ttps:['Ransomware','Data Extortion','Backup Kill'] },
+];
+const taEl = document.getElementById('ta-list');
+actors.forEach(a => {
+  taEl.innerHTML += `<div class="threat-actor-card">
+    <div class="ta-name">${a.name}</div>
+    <div class="ta-origin">${a.origin}</div>
+    <div class="ta-ttps">${a.ttps.map(t=>`<span class="ta-ttp">${t}</span>`).join('')}</div>
+  </div>`;
+});
+
+// OPCO SUMMARY
+const opcos = [
+  { name:'Axiata MY',  alerts:5, color:'#f1707b' },
+  { name:'XL Axiata',  alerts:2, color:'#ff8c00' },
+  { name:'Celcom',     alerts:2, color:'#ff8c00' },
+  { name:'Dialog',     alerts:1, color:'#2899f5' },
+  { name:'Robi',       alerts:1, color:'#2899f5' },
+  { name:'edotco',     alerts:1, color:'#2899f5' },
+];
+const opcoEl = document.getElementById('opco-summary');
+opcos.forEach(o => {
+  const maxA = opcos[0].alerts;
+  const pct = Math.round(o.alerts/maxA*100);
+  opcoEl.innerHTML += `<div style="display:flex;align-items:center;gap:8px;">
+    <div style="width:80px;font-size:11px;color:var(--text)">${o.name}</div>
+    <div style="flex:1;height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;">
+      <div style="width:${pct}%;height:100%;background:${o.color};border-radius:3px;"></div>
+    </div>
+    <span class="badge badge-${o.alerts>=4?'critical':o.alerts>=2?'high':'medium'}">${o.alerts} alert${o.alerts>1?'s':''}</span>
+  </div>`;
+});
+
+// ACTA HISTORY CHART
+new Chart(document.getElementById('actaChart'), {
+  type:'bar',
+  data:{
+    labels:['W09','W10','W11','W12','W13','W14','W15','W16'],
+    datasets:[
+      { label:'Critical', data:[2,3,1,4,2,3,3,4], backgroundColor:'rgba(241,112,123,0.7)', borderRadius:2, stack:'s' },
+      { label:'High',     data:[4,5,6,5,7,5,6,6], backgroundColor:'rgba(255,140,0,0.6)',   borderRadius:2, stack:'s' },
+      { label:'Medium',   data:[3,2,4,3,2,4,3,3], backgroundColor:'rgba(40,153,245,0.4)',  borderRadius:2, stack:'s' },
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ position:'top', labels:{ boxWidth:8, padding:8, font:{size:9} } } },
+    scales:{
+      x:{ stacked:true, grid:{ display:false } },
+      y:{ stacked:true, grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ font:{size:9} } }
+    }
+  }
+});
+
+// ACTA HISTORY LIST
+const history = [
+  { week:'W15', title:'Midnight Blizzard credential harvesting campaign', color:'#f1707b' },
+  { week:'W14', title:'BatLoader malware via SEO poisoning observed', color:'#ff8c00' },
+  { week:'W13', title:'Ivanti Connect Secure mass exploitation begins', color:'#f1707b' },
+  { week:'W12', title:'Royal ransomware rebrands as BlackSuit', color:'#ff8c00' },
+];
+const histEl = document.getElementById('acta-history');
+history.forEach(h => {
+  histEl.innerHTML += `<div class="tl-row">
+    <div class="tl-week">${h.week}</div>
+    <div class="tl-dot2" style="background:${h.color}"></div>
+    <div class="tl-text">${h.title}</div>
+  </div>`;
+});
+</script>
+</body>
+</html>

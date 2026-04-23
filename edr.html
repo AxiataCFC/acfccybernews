@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACFC | EDR / XDR Monitor</title>
+<link rel="stylesheet" href="sentinel.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+.page { display:flex; flex-direction:column; height:100vh; }
+.content { flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:auto 1fr 1fr; gap:8px; padding:8px; overflow:hidden; }
+.kpi-strip  { grid-column:1/-1; display:grid; grid-template-columns:repeat(6,1fr); gap:8px; }
+.p-defender { grid-column:1/3; grid-row:2; }
+.p-cs       { grid-column:3;   grid-row:2; }
+.p-sysmon   { grid-column:1;   grid-row:3; }
+.p-endpoint { grid-column:2;   grid-row:3; }
+.p-anomaly  { grid-column:3;   grid-row:3; }
+
+/* DROPOFF ALERT BANNER */
+.dropoff-banner {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 14px; margin-bottom:6px;
+  background:rgba(241,112,123,0.1); border:1px solid rgba(241,112,123,0.35);
+  border-radius:4px; animation:bannerPulse 3s infinite;
+}
+@keyframes bannerPulse {
+  0%,100% { border-color:rgba(241,112,123,0.35); }
+  50%      { border-color:rgba(241,112,123,0.7); }
+}
+.dropoff-icon { font-size:16px; }
+.dropoff-text { flex:1; font-size:11px; color:#f1707b; font-weight:500; }
+.dropoff-time { font-size:10px; color:var(--text-dim); }
+
+/* EDR PRODUCT HEADER */
+.product-header {
+  display:flex; align-items:center; gap:8px; padding:8px 12px;
+  background:var(--bg-card); border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.product-logo { font-size:12px; font-weight:700; letter-spacing:1px; }
+.product-status { display:flex; align-items:center; gap:5px; font-size:11px; margin-left:auto; }
+
+/* BASELINE COMPARISON */
+.baseline-row { display:flex; align-items:center; gap:8px; padding:5px 10px; border-bottom:1px solid rgba(255,255,255,0.04); font-size:11px; }
+.baseline-row:last-child { border:none; }
+.bl-label { width:80px; color:var(--text-dim); font-size:10px; }
+.bl-track { flex:1; height:6px; background:rgba(255,255,255,0.05); border-radius:3px; position:relative; overflow:visible; }
+.bl-expected { height:100%; border-radius:3px; background:rgba(40,153,245,0.3); border:1px solid rgba(40,153,245,0.4); position:relative; }
+.bl-actual { position:absolute; top:0; height:100%; border-radius:3px; transition:width 1s ease; }
+.bl-actual.normal   { background:rgba(22,198,12,0.7); }
+.bl-actual.low      { background:rgba(255,140,0,0.8); }
+.bl-actual.critical { background:rgba(241,112,123,0.9); animation:blinkBar 1.5s infinite; }
+@keyframes blinkBar { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.bl-val { font-size:10px; width:60px; text-align:right; }
+.bl-delta { font-size:10px; width:48px; text-align:right; }
+
+/* ENDPOINT TABLE */
+.ep-row { display:grid; grid-template-columns:1fr 70px 70px 70px; gap:0; align-items:center; padding:6px 10px; border-bottom:1px solid rgba(255,255,255,0.04); font-size:10px; }
+.ep-row.header { background:var(--bg-base); color:var(--text-dim); letter-spacing:0.5px; text-transform:uppercase; font-size:9px; border-bottom:1px solid var(--border); }
+.ep-name { color:var(--text); font-size:11px; }
+
+/* ANOMALY LIST */
+.anomaly-item { padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.04); }
+.anomaly-item:last-child { border:none; }
+.anomaly-header { display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+.anomaly-title  { font-size:11px; color:var(--text-bright); font-weight:500; flex:1; }
+.anomaly-desc   { font-size:10px; color:var(--text-dim); line-height:1.5; }
+.anomaly-time   { font-size:10px; color:var(--text-dim); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-placeholder" onclick="document.getElementById('logo-upload').click()">[ LOGO ]</div>
+      <input type="file" id="logo-upload" accept="image/*" onchange="handleLogo(event)">
+      <img id="logo-img" src="" alt="">
+    </div>
+    <div>
+      <div class="topbar-title">Axiata Cyber Fusion Center</div>
+      <div class="topbar-sub">Microsoft Sentinel — EDR / XDR Volume Monitor</div>
+    </div>
+    <nav class="topbar-nav">
+      <a href="index.html"         class="nav-item">Overview</a>
+      <a href="incidents.html"     class="nav-item">Exploit Movement</a>
+      <a href="edr.html"           class="nav-item active">EDR / XDR</a>
+      <a href="acta.html"          class="nav-item">ACTA</a>
+      <a href="intel.html"         class="nav-item">Threat Intel</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="topbar-badge"><span class="live-dot"></span>LIVE</span>
+      <span class="topbar-clock" id="clock">--:--:--</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- KPI STRIP -->
+    <div class="kpi-strip">
+      <div class="panel" style="padding:10px 14px;border-left:3px solid #2899f5;">
+        <div style="font-size:10px;color:var(--text-dim)">Defender Alerts (24h)</div>
+        <div style="font-size:22px;font-weight:600;color:#2899f5">142</div>
+        <div style="font-size:10px;color:#16c60c">Within baseline (130–160)</div>
+      </div>
+      <div class="panel" style="padding:10px 14px;border-left:3px solid #f1707b;">
+        <div style="font-size:10px;color:var(--text-dim)">CrowdStrike Alerts (24h)</div>
+        <div style="font-size:22px;font-weight:600;color:#f1707b" id="cs-kpi">3</div>
+        <div style="font-size:10px;color:#f1707b" id="cs-kpi-sub">⚠ DROP — baseline 10–15</div>
+      </div>
+      <div class="panel" style="padding:10px 14px;border-left:3px solid #ff8c00;">
+        <div style="font-size:10px;color:var(--text-dim)">Sysmon Events (24h)</div>
+        <div style="font-size:22px;font-weight:600;color:#ff8c00">28.4K</div>
+        <div style="font-size:10px;color:#ff8c00">▲ 34% above baseline</div>
+      </div>
+      <div class="panel" style="padding:10px 14px;border-left:3px solid #16c60c;">
+        <div style="font-size:10px;color:var(--text-dim)">Endpoints Reporting</div>
+        <div style="font-size:22px;font-weight:600;color:#16c60c">1,241</div>
+        <div style="font-size:10px;color:var(--text-dim)">of 1,284 total (97%)</div>
+      </div>
+      <div class="panel" style="padding:10px 14px;border-left:3px solid #f1707b;">
+        <div style="font-size:10px;color:var(--text-dim)">Silent Endpoints</div>
+        <div style="font-size:22px;font-weight:600;color:#f1707b">43</div>
+        <div style="font-size:10px;color:#f1707b">no telemetry &gt;2h</div>
+      </div>
+      <div class="panel" style="padding:10px 14px;border-left:3px solid #8764b8;">
+        <div style="font-size:10px;color:var(--text-dim)">Sentinel Analytics Hits</div>
+        <div style="font-size:22px;font-weight:600;color:#b09de0">247</div>
+        <div style="font-size:10px;color:var(--text-dim)">134 rules firing</div>
+      </div>
+    </div>
+
+    <!-- MICROSOFT DEFENDER PANEL -->
+    <div class="panel p-defender">
+      <div class="product-header">
+        <div class="product-logo" style="color:#2899f5">Microsoft Defender XDR</div>
+        <div style="font-size:10px;color:var(--text-dim)">MicrosoftDefenderATP connector</div>
+        <div class="product-status">
+          <div class="status-dot green pulse"></div>
+          <span style="color:#16c60c">Healthy</span>
+        </div>
+      </div>
+      <div class="panel-body" style="display:flex;flex-direction:column;gap:10px;overflow:hidden;">
+        <div style="flex:1;min-height:0;"><canvas id="defenderChart"></canvas></div>
+        <div>
+          <div style="font-size:10px;color:var(--text-dim);letter-spacing:0.5px;margin-bottom:6px;padding:0 2px;">DAILY BASELINE VS ACTUAL — 7 DAYS</div>
+          <div id="defender-baseline"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CROWDSTRIKE PANEL -->
+    <div class="panel p-cs">
+      <!-- DROP-OFF BANNER -->
+      <div class="dropoff-banner" style="margin:8px 8px 0;">
+        <div class="dropoff-icon">⚠</div>
+        <div class="dropoff-text">CrowdStrike alert volume DROP detected — 3 alerts today vs 12 avg. Possible sensor outage or tampering.</div>
+        <div class="dropoff-time">Since 06:00</div>
+      </div>
+      <div class="product-header" style="margin-top:4px;">
+        <div class="product-logo" style="color:#f1707b">CrowdStrike Falcon</div>
+        <div style="font-size:10px;color:var(--text-dim)">CommonSecurityLog</div>
+        <div class="product-status">
+          <div class="status-dot amber"></div>
+          <span style="color:#ff8c00">Degraded</span>
+        </div>
+      </div>
+      <div class="panel-body" style="overflow:hidden;display:flex;flex-direction:column;gap:8px;">
+        <div style="flex:1;min-height:0;"><canvas id="csChart"></canvas></div>
+        <div>
+          <div style="font-size:10px;color:var(--text-dim);letter-spacing:0.5px;margin-bottom:4px;padding:0 2px;">AFFECTED SENSORS</div>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;padding:3px 4px;background:rgba(241,112,123,0.08);border-radius:3px;">
+              <div class="status-dot red"></div>
+              <span style="flex:1;color:var(--text)">AXIATA-WS-041 through WS-085</span>
+              <span style="color:#f1707b;font-size:10px">Silent 3h 12m</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;padding:3px 4px;">
+              <div class="status-dot amber"></div>
+              <span style="flex:1;color:var(--text)">AXIATA-DC-002, DC-003</span>
+              <span style="color:#ff8c00;font-size:10px">Intermittent</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SYSMON / EVENT LOG PANEL -->
+    <div class="panel p-sysmon">
+      <div class="panel-header">
+        <span class="panel-title">Sysmon / Windows Event Spike</span>
+        <span class="panel-subtitle">Event ID breakdown</span>
+      </div>
+      <div class="panel-body"><div class="chart-wrap"><canvas id="sysmonChart"></canvas></div></div>
+    </div>
+
+    <!-- SILENT ENDPOINTS -->
+    <div class="panel p-endpoint">
+      <div class="panel-header">
+        <span class="panel-title">Silent Endpoints</span>
+        <span class="panel-subtitle">No telemetry &gt;2h — investigate</span>
+      </div>
+      <div class="panel-body no-pad" style="overflow-y:auto;">
+        <div class="ep-row header"><div>Hostname</div><div>Last Seen</div><div>OS</div><div>Status</div></div>
+        <div id="ep-list"></div>
+      </div>
+    </div>
+
+    <!-- ANOMALY SIGNALS -->
+    <div class="panel p-anomaly">
+      <div class="panel-header">
+        <span class="status-dot amber"></span>
+        <span class="panel-title">Volume Anomaly Signals</span>
+        <span class="panel-subtitle">Sudden drops &amp; spikes</span>
+      </div>
+      <div class="panel-body no-pad" style="overflow-y:auto;">
+        <div id="anomaly-list"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function tick() {
+  const n=new Date();
+  document.getElementById('clock').textContent=
+    [n.getHours(),n.getMinutes(),n.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
+}
+setInterval(tick,1000); tick();
+
+function handleLogo(e) {
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=ev=>{
+    document.getElementById('logo-img').src=ev.target.result;
+    document.getElementById('logo-img').style.display='block';
+    document.querySelector('.topbar-logo-placeholder').style.display='none';
+  }; r.readAsDataURL(f);
+}
+
+Chart.defaults.color='#8b949e'; Chart.defaults.font.family='Inter'; Chart.defaults.font.size=10;
+
+const days7 = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+// DEFENDER CHART
+const defExpected = [138,142,135,148,141,130,138];
+const defActual   = [135,144,138,152,139,128,142];
+new Chart(document.getElementById('defenderChart'), {
+  type:'line',
+  data:{
+    labels:days7,
+    datasets:[
+      { label:'Baseline avg', data:defExpected, borderColor:'rgba(40,153,245,0.4)', borderDash:[4,3], pointRadius:0, borderWidth:1.5, fill:false },
+      { label:'Actual',       data:defActual,   borderColor:'#2899f5', backgroundColor:'rgba(40,153,245,0.08)', fill:true, tension:0.3, pointRadius:3, borderWidth:2 },
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ position:'top', labels:{ boxWidth:8, padding:8, font:{size:9} } } },
+    scales:{
+      x:{ grid:{ display:false } },
+      y:{ grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ font:{size:9} } }
+    }
+  }
+});
+
+// DEFENDER BASELINE ROWS
+const defRows = [
+  { label:'Mon', expected:138, actual:135 },
+  { label:'Tue', expected:142, actual:144 },
+  { label:'Wed', expected:135, actual:138 },
+  { label:'Sun (today)', expected:138, actual:142 },
+];
+const dbDiv = document.getElementById('defender-baseline');
+defRows.forEach(r => {
+  const pct = Math.round(r.actual/180*100);
+  const expPct = Math.round(r.expected/180*100);
+  const delta = r.actual - r.expected;
+  const dColor = delta > 10 ? '#ff8c00' : delta < -10 ? '#f1707b' : '#16c60c';
+  dbDiv.innerHTML += `<div class="baseline-row">
+    <div class="bl-label">${r.label}</div>
+    <div class="bl-track">
+      <div class="bl-expected" style="width:${expPct}%">
+        <div class="bl-actual normal" style="width:${Math.round(r.actual/r.expected*100)}%"></div>
+      </div>
+    </div>
+    <div class="bl-val">${r.actual}</div>
+    <div class="bl-delta" style="color:${dColor}">${delta>0?'+':''}${delta}</div>
+  </div>`;
+});
+
+// CROWDSTRIKE CHART — showing the drop-off
+const csExpected = [12,14,11,13,12,10,12];
+const csActual   = [13,11,12,14,10, 8, 3]; // drops today
+new Chart(document.getElementById('csChart'), {
+  type:'bar',
+  data:{
+    labels:days7,
+    datasets:[
+      { label:'Baseline avg', data:csExpected, backgroundColor:'rgba(241,112,123,0.2)', borderColor:'rgba(241,112,123,0.4)', borderWidth:1, borderRadius:2 },
+      { label:'Actual',       data:csActual,   backgroundColor:csActual.map((v,i)=> i===6?'rgba(241,112,123,0.9)':'rgba(241,112,123,0.5)'), borderRadius:2 },
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ position:'top', labels:{ boxWidth:8, padding:8, font:{size:9} } } },
+    scales:{
+      x:{ grid:{ display:false } },
+      y:{ grid:{ color:'rgba(255,255,255,0.04)' }, min:0, max:20, ticks:{ font:{size:9} } }
+    }
+  }
+});
+
+// SYSMON CHART
+new Chart(document.getElementById('sysmonChart'), {
+  type:'bar',
+  data:{
+    labels:['Proc Create','Net Connect','File Create','Reg Set','Proc Inject','DNS Query','Script Block'],
+    datasets:[
+      { label:'Baseline', data:[8400,3200,2100,1800,420,980,340], backgroundColor:'rgba(40,153,245,0.25)', borderRadius:2 },
+      { label:'Today',    data:[12800,4900,3400,2200,1840,1620,680], backgroundColor:'rgba(255,140,0,0.6)', borderRadius:2 },
+    ]
+  },
+  options:{
+    indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ position:'top', labels:{ boxWidth:8, padding:8, font:{size:9} } } },
+    scales:{
+      x:{ grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ font:{size:9} } },
+      y:{ grid:{ display:false }, ticks:{ font:{size:9} } }
+    }
+  }
+});
+
+// SILENT ENDPOINTS
+const endpoints = [
+  { name:'AXIATA-WS-041', last:'3h 12m', os:'Win11', status:'critical' },
+  { name:'AXIATA-WS-042', last:'3h 08m', os:'Win11', status:'critical' },
+  { name:'AXIATA-WS-055', last:'2h 44m', os:'Win10', status:'high' },
+  { name:'AXIATA-WS-061', last:'2h 31m', os:'Win10', status:'high' },
+  { name:'AXIATA-WS-078', last:'2h 18m', os:'Win11', status:'high' },
+  { name:'AXIATA-SRV-12', last:'2h 09m', os:'Server', status:'high' },
+  { name:'AXIATA-WS-083', last:'2h 02m', os:'Win10', status:'medium' },
+];
+const epEl = document.getElementById('ep-list');
+endpoints.forEach(e => {
+  epEl.innerHTML += `<div class="ep-row">
+    <div class="ep-name">${e.name}</div>
+    <div style="color:${e.status==='critical'?'#f1707b':e.status==='high'?'#ff8c00':'#2899f5'}">${e.last}</div>
+    <div style="color:var(--text-dim)">${e.os}</div>
+    <div><span class="badge badge-${e.status==='critical'?'critical':e.status==='high'?'high':'medium'}">${e.status}</span></div>
+  </div>`;
+});
+
+// ANOMALY SIGNALS
+const anomalies = [
+  { title:'CrowdStrike alert drop — 75% below baseline', desc:'Only 3 alerts received today vs 7-day avg of 12. Sensors WS-041 through WS-085 silent. Possible sensor kill or network block.', time:'Since 06:00', sev:'critical' },
+  { title:'Sysmon Process Injection spike — 338% above avg', desc:'ProcessCreate (Event ID 1) and CreateRemoteThread (Event ID 8) surging. Correlated with INC-0041 ransomware pre-stage.', time:'Last 4h', sev:'critical' },
+  { title:'Defender AV detections — 0 for 43 endpoints', desc:'43 machines reporting to Sentinel but no AV telemetry. Possible AV service kill via GPO or manual stop.', time:'Last 2h', sev:'high' },
+  { title:'DNS query volume spike — 62% above baseline', desc:'Unusual DNS query rate from WS-055 and WS-083. Pattern consistent with DGA or C2 check-in beaconing.', time:'Last 1h', sev:'high' },
+];
+const anomEl = document.getElementById('anomaly-list');
+anomalies.forEach(a => {
+  anomEl.innerHTML += `<div class="anomaly-item">
+    <div class="anomaly-header">
+      <span class="badge badge-${a.sev}">${a.sev}</span>
+      <span class="anomaly-title">${a.title}</span>
+      <span class="anomaly-time">${a.time}</span>
+    </div>
+    <div class="anomaly-desc">${a.desc}</div>
+  </div>`;
+});
+
+// Animate CrowdStrike KPI to show it dropped
+let csVal = 3;
+setInterval(() => {
+  if (Math.random() > 0.7) {
+    csVal = Math.max(2, csVal + (Math.random() > 0.5 ? 1 : -1));
+    document.getElementById('cs-kpi').textContent = csVal;
+  }
+}, 15000);
+</script>
+</body>
+</html>
