@@ -7,35 +7,222 @@
 <link rel="stylesheet" href="sentinel.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
+/* OVERRIDE FOR TWO-PANEL LAYOUT */
 .page { display:flex; flex-direction:column; height:100vh; }
-.content { flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr 1fr; gap:8px; padding:8px; overflow:hidden; }
-/* panel spanning */
-.p-map      { grid-column:1; grid-row:1; }
-.p-timeline { grid-column:2; grid-row:1; }
-.p-kpi      { grid-column:3; grid-row:1; }
-.p-countries{ grid-column:1; grid-row:2; }
-.p-types    { grid-column:2; grid-row:2; }
-.p-health   { grid-column:3; grid-row:2; }
+.content { 
+  flex:1; 
+  display:grid; 
+  grid-template-columns: 1fr 1fr;  /* 50/50 split */
+  gap: 12px; 
+  padding: 12px; 
+  overflow: hidden;
+}
 
-/* MAP */
-.map-svg { width:100%; height:100%; }
-.country-bubble { cursor:pointer; transition:r 0.3s; }
-.map-label { font-size:9px; fill:#6e7f9a; font-family:'Inter',sans-serif; }
-.map-value { font-size:10px; fill:#c9d1d9; font-weight:600; font-family:'Inter',sans-serif; }
+/* Left and Right panels both scrollable */
+.panel-left, .panel-right {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
 
-/* HEALTH */
-.health-row { display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
-.health-row:last-child { border:none; }
-.health-name { flex:1; font-size:11px; color:var(--text); }
-.health-track { flex:1; height:4px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; }
-.health-fill  { height:100%; border-radius:2px; transition:width 1s ease; }
-.health-val   { font-size:11px; width:36px; text-align:right; }
+.panel-header-sticky {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+  flex-shrink: 0;
+}
+
+.panel-scroll-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+/* KPI mini cards inside panels */
+.mini-stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.mini-card {
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 10px 16px;
+  flex: 1;
+  min-width: 100px;
+  border-left: 3px solid var(--sentinel-blue);
+}
+.mini-card .label {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.3px;
+}
+.mini-card .value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-bright);
+  line-height: 1.2;
+}
+.mini-card .trend {
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+/* Weekly Report Table */
+.weekly-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.weekly-table th {
+  text-align: left;
+  padding: 10px 6px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  font-weight: 500;
+}
+.weekly-table td {
+  padding: 10px 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.weekly-table tr:last-child td {
+  border-bottom: none;
+}
+.trend-up { color: #f1707b; }
+.trend-down { color: #16c60c; }
+.badge-week {
+  background: rgba(0,120,212,0.15);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  color: var(--sentinel-blue);
+}
+
+/* Incident Progress Tracker */
+.incident-tracker {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.incident-card {
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: all 0.2s;
+  animation: fadeIn 0.3s ease;
+}
+.incident-card.critical {
+  border-left: 4px solid #f1707b;
+}
+.incident-card.high {
+  border-left: 4px solid #ff8c00;
+}
+.incident-header {
+  padding: 12px 14px;
+  background: rgba(0,0,0,0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.incident-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-bright);
+}
+.incident-id {
+  font-family: monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+.incident-status {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(22,198,12,0.15);
+  color: #16c60c;
+}
+.incident-status.active {
+  background: rgba(241,112,123,0.15);
+  color: #f1707b;
+}
+.progress-container {
+  padding: 12px 14px;
+}
+.mitre-stage-progress {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.stage-badge {
+  font-size: 9px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.05);
+  color: var(--text-dim);
+  transition: all 0.2s;
+}
+.stage-badge.completed {
+  background: rgba(22,198,12,0.2);
+  color: #16c60c;
+  border: 1px solid rgba(22,198,12,0.3);
+}
+.stage-badge.current {
+  background: rgba(241,112,123,0.25);
+  color: #f1707b;
+  border: 1px solid rgba(241,112,123,0.5);
+  font-weight: 600;
+}
+.progress-bar-wrapper {
+  background: rgba(255,255,255,0.05);
+  border-radius: 20px;
+  height: 6px;
+  overflow: hidden;
+  margin: 12px 0 8px;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--sentinel-blue);
+  border-radius: 20px;
+  transition: width 0.5s ease;
+}
+.progress-fill.critical {
+  background: #f1707b;
+}
+.incident-footer {
+  padding: 8px 14px 12px;
+  font-size: 10px;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 1000px) {
+  .content { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
 <div class="page">
 
-  <!-- TOPBAR -->
+  <!-- TOPBAR (shared) -->
   <div class="topbar">
     <div class="topbar-logo">
       <div class="topbar-logo-placeholder" onclick="document.getElementById('logo-upload').click()">[ LOGO ]</div>
@@ -47,11 +234,12 @@
       <div class="topbar-sub">Microsoft Sentinel — SOC Overview</div>
     </div>
     <nav class="topbar-nav">
-      <a href="index.html"       class="nav-item active">Overview</a>
-      <a href="incidents.html"     class="nav-item">Exploit Movement</a>
-      <a href="edr.html"           class="nav-item">EDR / XDR</a>
-      <a href="acta.html"          class="nav-item">ACTA</a>
-      <a href="intel.html"       class="nav-item">Threat Intel</a>
+      <a href="index.html" class="nav-item active">Overview</a>
+      <a href="incidents.html" class="nav-item">Exploit Movement</a>
+      <a href="edr.html" class="nav-item">EDR / XDR</a>
+      <a href="acta.html" class="nav-item">ACTA</a>
+      <a href="intel.html" class="nav-item">Threat Intel</a>
+      <a href="soc-health.html" class="nav-item">SOC Health</a>
     </nav>
     <div class="topbar-right">
       <span class="topbar-badge"><span class="live-dot"></span>LIVE</span>
@@ -59,437 +247,378 @@
     </div>
   </div>
 
-  <!-- 6-PANEL GRID -->
+  <!-- 2-PANEL MAIN CONTENT: 50/50 split -->
   <div class="content">
-
-    <!-- PANEL 1: WORLD THREAT MAP -->
-    <div class="panel p-map">
-      <div class="panel-header">
-        <span class="status-dot green pulse"></span>
-        <span class="panel-title">Top Attack Origins</span>
-        <span class="panel-subtitle">Last 24h · 4,341 events</span>
-      </div>
-      <div class="panel-body no-pad">
-        <svg class="map-svg" viewBox="0 0 520 240" id="map-svg" preserveAspectRatio="xMidYMid meet">
-          <!-- simplified world outline paths -->
-          <rect width="520" height="240" fill="#0d1117"/>
-          <!-- continent shapes approximate -->
-          <!-- North America -->
-          <path d="M60,50 Q90,40 120,55 Q140,65 145,85 Q150,105 130,120 Q110,135 90,125 Q70,115 55,95 Q45,75 60,50Z" fill="#1a2030" stroke="#252d3f" stroke-width="0.5"/>
-          <!-- South America -->
-          <path d="M110,130 Q130,125 140,140 Q148,158 145,180 Q140,200 125,210 Q110,215 100,200 Q88,182 90,162 Q92,142 110,130Z" fill="#1a2030" stroke="#252d3f" stroke-width="0.5"/>
-          <!-- Europe -->
-          <path d="M220,40 Q245,35 265,45 Q278,55 275,70 Q270,82 255,85 Q238,88 222,78 Q208,68 210,55 Q213,44 220,40Z" fill="#1a2030" stroke="#252d3f" stroke-width="0.5"/>
-          <!-- Africa -->
-          <path d="M225,95 Q248,88 265,98 Q278,110 278,130 Q276,155 265,170 Q252,182 238,178 Q222,172 215,155 Q208,136 210,115 Q213,100 225,95Z" fill="#1a2030" stroke="#252d3f" stroke-width="0.5"/>
-          <!-- Middle East -->
-          <path d="M280,75 Q298,70 312,78 Q322,86 320,98 Q316,108 304,110 Q290,111 282,103 Q275,93 278,82Z" fill="#1a2030" stroke="#252d3f" stroke-width="0.5"/>
-          <!-- Asia -->
-          <path d="M318,35 Q370,28 410,38 Q440,48 448,70 Q452,90 440,105 Q424,118 400,115 Q375,112 355,100 Q332,85 320,68 Q310,52 318,35Z" fill="#1a2030" stroke="#252d3f" stroke-width="0.5"/>
-          <!-- SEA -->
-          <path d="M380,118 Q405,112 422,122 Q432,132 428,148 Q422,160 408,162 Q392,163 382,152 Q372,140 375,128Z" fill="#1a2030" stroke="#252d3f" stroke-width="0.5"/>
-          <!-- Australia -->
-          <path d="M398,175 Q422,168 440,178 Q452,188 450,202 Q446,216 432,220 Q416,222 404,212 Q392,200 393,187Z" fill="#1a2030" stroke="#252d3f" stroke-width="0.5"/>
-
-          <!-- Attack lines from various countries to Malaysia (target) -->
-          <!-- Malaysia approx at 410,138 -->
-          <line x1="108" y1="78"  x2="405" y2="132" stroke="rgba(231,72,86,0.25)" stroke-width="0.8" stroke-dasharray="3,3"/>
-          <line x1="240" y1="62"  x2="405" y2="132" stroke="rgba(0,120,212,0.2)"  stroke-width="0.8" stroke-dasharray="3,3"/>
-          <line x1="255" y1="52"  x2="405" y2="132" stroke="rgba(247,99,12,0.2)"  stroke-width="0.8" stroke-dasharray="3,3"/>
-          <line x1="370" y1="58"  x2="405" y2="132" stroke="rgba(0,120,212,0.2)"  stroke-width="0.8" stroke-dasharray="3,3"/>
-          <line x1="395" y1="62"  x2="405" y2="132" stroke="rgba(123,104,238,0.2)" stroke-width="0.8" stroke-dasharray="3,3"/>
-          <line x1="128" y1="165" x2="405" y2="132" stroke="rgba(0,180,216,0.2)"  stroke-width="0.8" stroke-dasharray="3,3"/>
-
-          <!-- Bubbles — sized by attack count -->
-          <!-- US -->
-          <circle cx="108" cy="78"  r="16" fill="rgba(231,72,86,0.2)"  stroke="#e74856" stroke-width="1" class="country-bubble"/>
-          <text x="108" y="76"  text-anchor="middle" class="map-value" fill="#e74856">1.04K</text>
-          <text x="108" y="86"  text-anchor="middle" class="map-label">US</text>
-          <!-- UK -->
-          <circle cx="228" cy="52"  r="9"  fill="rgba(0,120,212,0.2)"  stroke="#0078d4" stroke-width="1" class="country-bubble"/>
-          <text x="228" y="50"  text-anchor="middle" class="map-value" fill="#1a90e0" style="font-size:8px">708</text>
-          <text x="228" y="59"  text-anchor="middle" class="map-label">UK</text>
-          <!-- Germany -->
-          <circle cx="248" cy="58"  r="7"  fill="rgba(247,99,12,0.2)"  stroke="#f7630c" stroke-width="1" class="country-bubble"/>
-          <text x="248" y="56"  text-anchor="middle" class="map-value" fill="#f7630c" style="font-size:8px">426</text>
-          <text x="248" y="65"  text-anchor="middle" class="map-label">DE</text>
-          <!-- China -->
-          <circle cx="395" cy="70"  r="8"  fill="rgba(0,120,212,0.2)"  stroke="#0078d4" stroke-width="1" class="country-bubble"/>
-          <text x="395" y="68"  text-anchor="middle" class="map-value" fill="#1a90e0" style="font-size:8px">401</text>
-          <text x="395" y="77"  text-anchor="middle" class="map-label">CN</text>
-          <!-- Russia -->
-          <circle cx="355" cy="52"  r="7"  fill="rgba(123,104,238,0.2)" stroke="#7b68ee" stroke-width="1" class="country-bubble"/>
-          <text x="355" y="50"  text-anchor="middle" class="map-value" fill="#9d88f0" style="font-size:8px">299</text>
-          <text x="355" y="59"  text-anchor="middle" class="map-label">RU</text>
-          <!-- Brazil -->
-          <circle cx="128" cy="168" r="6"  fill="rgba(0,180,216,0.2)"  stroke="#00b4d8" stroke-width="1" class="country-bubble"/>
-          <text x="128" y="175"  text-anchor="middle" class="map-label">BR</text>
-          <!-- Malaysia TARGET -->
-          <circle cx="405" cy="132" r="10" fill="rgba(19,161,14,0.3)"  stroke="#13a10e" stroke-width="1.5"/>
-          <circle cx="405" cy="132" r="16" fill="none" stroke="rgba(19,161,14,0.2)" stroke-width="1" stroke-dasharray="2,2"/>
-          <text x="405" y="130"  text-anchor="middle" class="map-value" fill="#13a10e" style="font-size:9px">MY</text>
-          <text x="405" y="148"  text-anchor="middle" class="map-label" fill="#13a10e">TARGET</text>
-
-          <!-- Legend -->
-          <circle cx="18" cy="210" r="5" fill="rgba(231,72,86,0.3)" stroke="#e74856" stroke-width="1"/>
-          <text x="28" y="214" class="map-label" fill="#6e7f9a">Attack origin</text>
-          <circle cx="110" cy="210" r="5" fill="rgba(19,161,14,0.3)" stroke="#13a10e" stroke-width="1"/>
-          <text x="120" y="214" class="map-label" fill="#6e7f9a">Target (MY)</text>
-        </svg>
-      </div>
-    </div>
-
-    <!-- PANEL 2: ALERT TIMELINE -->
-    <div class="panel p-timeline">
-      <div class="panel-header">
-        <span class="panel-title">Alert Volume — 7 Days</span>
-        <span class="panel-subtitle">Scheduled Analytics · 2.45K total</span>
-      </div>
-      <div class="panel-body">
-        <div class="chart-wrap"><canvas id="timelineChart"></canvas></div>
-      </div>
-    </div>
-
-    <!-- PANEL 3: KPI TILES -->
-    <div class="panel p-kpi">
-      <div class="panel-header">
-        <span class="panel-title">Security KPIs</span>
-        <span class="panel-subtitle">Live counters</span>
-      </div>
-      <div class="panel-body">
-        <div class="kpi-grid">
-          <div class="kpi-tile red">
-            <div class="kpi-label">Critical Alerts</div>
-            <div class="kpi-value red" id="kpi-critical">247</div>
-            <div class="kpi-delta up">▲ 18% vs yesterday</div>
+    
+    <!-- PANEL 1: EDR/XDR WEEKLY REPORT -->
+    <div class="panel-left">
+      <div class="panel-header-sticky">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="status-dot green pulse"></span>
+          <span style="font-weight: 600; font-size: 14px;">EDR / XDR Weekly Report</span>
+          <span style="font-size: 10px; color: var(--text-dim); margin-left: auto;">Detection Rates & Incident Volume</span>
+        </div>
+        <div class="mini-stats">
+          <div class="mini-card">
+            <div class="label">Avg Weekly Alerts</div>
+            <div class="value" id="avg-alerts">148</div>
+            <div class="trend trend-down">▼ 12% vs last month</div>
           </div>
-          <div class="kpi-tile amber">
-            <div class="kpi-label">High Severity</div>
-            <div class="kpi-value amber">583</div>
-            <div class="kpi-delta up">▲ 6%</div>
+          <div class="mini-card">
+            <div class="label">False Positive Rate</div>
+            <div class="value" id="fp-rate">8.2%</div>
+            <div class="trend trend-down">▼ 2% improved</div>
           </div>
-          <div class="kpi-tile blue">
-            <div class="kpi-label">Open Incidents</div>
-            <div class="kpi-value blue">42</div>
-            <div class="kpi-delta">— unchanged</div>
+          <div class="mini-card">
+            <div class="label">MTTD (hrs)</div>
+            <div class="value" id="mttd">1.4</div>
+            <div class="trend trend-down">▼ 0.3h</div>
           </div>
-          <div class="kpi-tile green">
-            <div class="kpi-label">MTTR (hrs)</div>
-            <div class="kpi-value green">3.2</div>
-            <div class="kpi-delta down">▼ 12% improved</div>
-          </div>
-          <div class="kpi-tile purple">
-            <div class="kpi-label">Data Ingested</div>
-            <div class="kpi-value purple">18.5GB</div>
-            <div class="kpi-delta">daily avg</div>
-          </div>
-          <div class="kpi-tile teal">
-            <div class="kpi-label">Rules Active</div>
-            <div class="kpi-value" style="color:var(--accent-teal)">134</div>
-            <div class="kpi-delta">analytics rules</div>
+        </div>
+      </div>
+      <div class="panel-scroll-body">
+        <table class="weekly-table" id="weekly-edr-table">
+          <thead>
+            <tr><th>Week</th><th>Defender Alerts</th><th>CrowdStrike Alerts</th><th>Incidents Opened</th><th>Trend</th></tr>
+          </thead>
+          <tbody id="edr-table-body">
+            <!-- dynamic rows injected -->
+          </tbody>
+        </table>
+        <div style="margin-top: 20px;">
+          <canvas id="edrTrendChart" style="height:180px; width:100%;"></canvas>
+        </div>
+        <div style="margin-top: 16px; padding: 12px; background: var(--bg-card); border-radius: 6px;">
+          <div style="font-size: 11px; font-weight: 600; color: var(--text-bright);">🔍 Analyst Insight</div>
+          <div style="font-size: 11px; color: var(--text-dim); margin-top: 6px;" id="weekly-insight">
+            CrowdStrike alert volume dropped significantly Week 14–15 due to sensor connectivity issues. Defender detections remain stable.
           </div>
         </div>
       </div>
     </div>
 
-    <!-- PANEL 4: TOP ATTACK COUNTRIES -->
-    <div class="panel p-countries">
-      <div class="panel-header">
-        <span class="panel-title">Top Attack Countries</span>
-        <span class="panel-subtitle">By event count</span>
-      </div>
-      <div class="panel-body">
-        <div class="chart-wrap"><canvas id="countriesChart"></canvas></div>
-      </div>
-    </div>
-
-    <!-- PANEL 5: ATTACK TYPE BREAKDOWN -->
-    <div class="panel p-types">
-      <div class="panel-header">
-        <span class="panel-title">Attack Type Breakdown</span>
-        <span class="panel-subtitle">Last 24h classification</span>
-      </div>
-      <div class="panel-body" style="display:flex;align-items:center;gap:16px;">
-        <div style="flex:0 0 140px;height:140px;position:relative;">
-          <canvas id="donutChart"></canvas>
-          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
-            <div style="font-size:18px;font-weight:600;color:var(--text-bright)">16.6K</div>
-            <div style="font-size:9px;color:var(--text-dim)">TOTAL</div>
-          </div>
+    <!-- PANEL 2: EXPLOIT MOVEMENT - LIVE INCIDENT TRACKER -->
+    <div class="panel-right">
+      <div class="panel-header-sticky">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="status-dot red pulse"></span>
+          <span style="font-weight: 600; font-size: 14px;">Exploit Movement · Incident Lifecycle</span>
+          <span style="font-size: 10px; color: var(--text-dim); margin-left: auto;" id="incident-count-badge">Active: 4</span>
         </div>
-        <div style="flex:1;display:flex;flex-direction:column;gap:5px;" id="donut-legend"></div>
-      </div>
-    </div>
-
-    <!-- PANEL 6: SOC HEALTH -->
-    <div class="panel p-health">
-      <div class="panel-header">
-        <span class="panel-title">SOC Health Monitor</span>
-        <span class="panel-subtitle">Connector & coverage status</span>
-      </div>
-      <div class="panel-body" style="overflow-y:auto;">
-        <div style="margin-bottom:10px;">
-          <div style="font-size:10px;color:var(--text-dim);letter-spacing:0.5px;margin-bottom:6px;">DATA CONNECTORS</div>
-          <div id="connectors"></div>
+        <div style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">
+          Real-time progression from Initial Access → Impact (MITRE ATT&CK)
         </div>
-        <div>
-          <div style="font-size:10px;color:var(--text-dim);letter-spacing:0.5px;margin-bottom:6px;">COVERAGE</div>
-          <div id="coverage"></div>
+      </div>
+      <div class="panel-scroll-body" id="incident-tracker-container">
+        <div class="incident-tracker" id="incident-tracker-list">
+          <!-- Incident cards injected here dynamically -->
         </div>
       </div>
     </div>
-
   </div>
 </div>
 
 <script>
-// CLOCK
+// ========================
+// CLOCK & LOGO HANDLERS
+// ========================
 function tick() {
-  const n=new Date();
-  document.getElementById('clock').textContent=
-    [n.getHours(),n.getMinutes(),n.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
+  const n = new Date();
+  document.getElementById('clock').textContent = 
+    [n.getHours(), n.getMinutes(), n.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
 }
 setInterval(tick,1000); tick();
 
-// LOGO
 function handleLogo(e) {
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader(); r.onload=ev=>{
-    const img=document.getElementById('logo-img');
-    img.src=ev.target.result; img.style.display='block';
+    document.getElementById('logo-img').src=ev.target.result;
+    document.getElementById('logo-img').style.display='block';
     document.querySelector('.topbar-logo-placeholder').style.display='none';
   }; r.readAsDataURL(f);
 }
 
-const C = Chart.defaults;
-C.color = '#6e7f9a';
-C.font.family = 'Inter';
-C.font.size = 10;
+Chart.defaults.color='#8b949e'; Chart.defaults.font.family='Inter'; Chart.defaults.font.size=10;
 
-// TIMELINE CHART
-const days = ['Apr 16','Apr 17','Apr 18','Apr 19','Apr 20','Apr 21','Apr 22'];
-new Chart(document.getElementById('timelineChart'), {
-  type:'line',
-  data:{
-    labels:days,
-    datasets:[
-      { label:'Critical', data:[82,105,91,138,115,178,247], borderColor:'#e74856', backgroundColor:'rgba(231,72,86,0.08)', fill:true, tension:0.4, pointRadius:3, borderWidth:2 },
-      { label:'High',     data:[210,245,198,312,278,385,583], borderColor:'#f7630c', backgroundColor:'rgba(247,99,12,0.05)', fill:true, tension:0.4, pointRadius:3, borderWidth:2 },
-      { label:'Medium',   data:[380,420,355,490,445,560,680], borderColor:'#0078d4', backgroundColor:'rgba(0,120,212,0.05)', fill:true, tension:0.4, pointRadius:3, borderWidth:1.5 }
-    ]
-  },
-  options:{
-    responsive:true, maintainAspectRatio:false,
-    interaction:{ mode:'index', intersect:false },
-    plugins:{ legend:{ position:'top', labels:{ boxWidth:10, padding:10, font:{size:10} } } },
-    scales:{
-      x:{ grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ font:{size:9} } },
-      y:{ grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ font:{size:9} } }
-    }
-  }
-});
-
-// COUNTRIES CHART
-new Chart(document.getElementById('countriesChart'), {
-  type:'bar',
-  data:{
-    labels:['Singapore','United States','Sri Lanka','Malaysia','India','Indonesia','Germany','Bangladesh'],
-    datasets:[{ data:[1044,708,426,401,299,274,237,221], backgroundColor:'rgba(0,120,212,0.7)', borderColor:'#0078d4', borderWidth:1, borderRadius:2 }]
-  },
-  options:{
-    indexAxis:'y', responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{ display:false } },
-    scales:{
-      x:{ grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ font:{size:9} } },
-      y:{ grid:{ display:false }, ticks:{ font:{size:10} } }
-    }
-  }
-});
-
-// DONUT CHART
-const donutData = [
-  { label:'Phishing',        value:4820, color:'#0078d4' },
-  { label:'Malware',         value:3250, color:'#7b68ee' },
-  { label:'Credential',      value:2890, color:'#e74856' },
-  { label:'Ransomware',      value:1640, color:'#f7630c' },
-  { label:'Supply Chain',    value:1200, color:'#00b4d8' },
-  { label:'Other',           value:2800, color:'#3d4f6e' },
+// ========================
+// EDR/XDR WEEKLY DATA (DYNAMIC)
+// ========================
+// Simulated weekly report: first week high, next week drop, etc.
+let weeklyData = [
+  { week: 'Week 1 (Mar 3-9)', defender: 210, crowdstrike: 145, incidents: 18, trend: 'up' },
+  { week: 'Week 2 (Mar 10-16)', defender: 198, crowdstrike: 138, incidents: 15, trend: 'down' },
+  { week: 'Week 3 (Mar 17-23)', defender: 225, crowdstrike: 152, incidents: 22, trend: 'up' },
+  { week: 'Week 4 (Mar 24-30)', defender: 189, crowdstrike: 98, incidents: 12, trend: 'down' },  // Drop in CS
+  { week: 'Week 5 (Mar 31-Apr 6)', defender: 142, crowdstrike: 52, incidents: 8, trend: 'critical' },
+  { week: 'Week 6 (Apr 7-13)', defender: 108, crowdstrike: 34, incidents: 5, trend: 'critical' },
+  { week: 'This Week (Apr 14-20)', defender: 86, crowdstrike: 28, incidents: 4, trend: 'recovery' }
 ];
-new Chart(document.getElementById('donutChart'), {
-  type:'doughnut',
-  data:{
-    labels:donutData.map(d=>d.label),
-    datasets:[{ data:donutData.map(d=>d.value), backgroundColor:donutData.map(d=>d.color), borderWidth:0, hoverOffset:4 }]
-  },
-  options:{
-    responsive:true, maintainAspectRatio:false, cutout:'68%',
-    plugins:{ legend:{ display:false } }
-  }
-});
-const legend = document.getElementById('donut-legend');
-donutData.forEach(d => {
-  const total = donutData.reduce((a,b)=>a+b.value,0);
-  const pct = Math.round(d.value/total*100);
-  legend.innerHTML += `<div style="display:flex;align-items:center;gap:6px;">
-    <div style="width:8px;height:8px;border-radius:2px;background:${d.color};flex-shrink:0"></div>
-    <div style="flex:1;font-size:11px;color:var(--text)">${d.label}</div>
-    <div style="font-size:11px;color:var(--text-dim)">${pct}%</div>
-  </div>`;
-});
 
-// CONNECTORS
-const connectors = [
-  { name:'Microsoft Defender XDR', status:'green', latency:'1.2s' },
-  { name:'Azure AD / Entra ID',    status:'green', latency:'0.8s' },
-  { name:'Office 365',             status:'green', latency:'1.5s' },
-  { name:'Palo Alto Firewall',     status:'green', latency:'2.1s' },
-  { name:'Tenable.io',             status:'amber', latency:'Delayed 12m' },
-  { name:'Syslog (Linux)',         status:'green', latency:'0.6s' },
-];
-const connDiv = document.getElementById('connectors');
-connectors.forEach(c => {
-  connDiv.innerHTML += `<div class="health-row">
-    <span class="status-dot ${c.status}"></span>
-    <span class="health-name">${c.name}</span>
-    <span style="font-size:10px;color:var(--text-dim)">${c.latency}</span>
-  </div>`;
-});
-
-// COVERAGE
-const coverage = [
-  { name:'EDR Coverage',      pct:94, color:'#13a10e' },
-  { name:'Log Ingestion',     pct:88, color:'#0078d4' },
-  { name:'UEBA Active',       pct:76, color:'#7b68ee' },
-  { name:'Threat Intel Feed', pct:100,color:'#13a10e' },
-];
-const covDiv = document.getElementById('coverage');
-coverage.forEach(c => {
-  covDiv.innerHTML += `<div class="health-row">
-    <span class="health-name">${c.name}</span>
-    <div class="health-track"><div class="health-fill" style="width:${c.pct}%;background:${c.color}"></div></div>
-    <span class="health-val" style="color:${c.color}">${c.pct}%</span>
-  </div>`;
-});
-
-// Animate KPI counter
-let kpi = 247;
-setInterval(() => {
-  kpi += Math.floor(Math.random()*3);
-  document.getElementById('kpi-critical').textContent = kpi;
-}, 8000);
-// =====================
-// 🔥 SAFE DYNAMIC ENGINE (NO STRUCTURE CHANGE)
-// =====================
-function rand(min, max) {
-  return Math.floor(Math.random() * (max - min) + min);
+function renderWeeklyTable() {
+  const tbody = document.getElementById('edr-table-body');
+  tbody.innerHTML = '';
+  weeklyData.forEach(w => {
+    let trendColor = '';
+    let trendIcon = '';
+    if (w.trend === 'up') { trendColor = '#f1707b'; trendIcon = '▲'; }
+    else if (w.trend === 'down') { trendColor = '#16c60c'; trendIcon = '▼'; }
+    else if (w.trend === 'critical') { trendColor = '#f1707b'; trendIcon = '⚠'; }
+    else { trendColor = '#ff8c00'; trendIcon = '↗'; }
+    
+    const row = `<tr>
+      <td><span class="badge-week">${w.week}</span></td>
+      <td style="color:#2899f5;">${w.defender}</td>
+      <td style="color:#f1707b;">${w.crowdstrike}</td>
+      <td>${w.incidents}</td>
+      <td style="color:${trendColor};">${trendIcon} ${w.trend === 'critical' ? 'drop' : w.trend}</td>
+    </tr>`;
+    tbody.innerHTML += row;
+  });
+  
+  // update insight based on latest weeks
+  const lastTwo = weeklyData.slice(-2);
+  const insightMsg = `CrowdStrike detections dropped from ${weeklyData[4].crowdstrike} to ${weeklyData[5].crowdstrike} in Week 5-6, sensor outage ongoing. Defender volume also decreased by 38% likely due to log filtering changes. Focus on EDR health check.`;
+  document.getElementById('weekly-insight').innerHTML = `🔎 ${insightMsg}`;
+  
+  // avg alerts
+  const avgDef = (weeklyData.reduce((s,w)=>s+w.defender,0)/weeklyData.length).toFixed(0);
+  document.getElementById('avg-alerts').innerText = avgDef;
+  document.getElementById('fp-rate').innerText = (7.2 + Math.random()*2).toFixed(1)+'%';
+  document.getElementById('mttd').innerText = (1.2 + Math.random()*0.5).toFixed(1);
 }
 
-// =====================
-// 📊 TIMELINE (Alert Volume)
-// =====================
-setInterval(() => {
-  try {
-    const chart = Chart.getChart("timelineChart");
-    if (!chart) return;
+// Chart for EDR Trend (Defender + CrowdStrike over weeks)
+function renderEdrChart() {
+  const ctx = document.getElementById('edrTrendChart').getContext('2d');
+  const weeks = weeklyData.map(w => w.week.replace('Week ', 'W'));
+  const defenderData = weeklyData.map(w => w.defender);
+  const csData = weeklyData.map(w => w.crowdstrike);
+  
+  if (window.edrChart) window.edrChart.destroy();
+  window.edrChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: weeks,
+      datasets: [
+        { label: 'Defender Alerts', data: defenderData, borderColor: '#2899f5', backgroundColor: 'rgba(40,153,245,0.05)', fill: true, tension: 0.3, pointRadius: 3, borderWidth: 2 },
+        { label: 'CrowdStrike Alerts', data: csData, borderColor: '#f1707b', backgroundColor: 'rgba(241,112,123,0.05)', fill: true, tension: 0.3, pointRadius: 3, borderWidth: 2 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9 } } } },
+      scales: { x: { grid: { display: false }, ticks: { font: { size: 9 } } }, y: { grid: { color: 'rgba(255,255,255,0.04)' } } }
+    }
+  });
+}
 
-    chart.data.datasets.forEach(ds => {
-      ds.data.shift();
-      ds.data.push(rand(100, 700));
+// ========================
+// EXPLOIT MOVEMENT: LIVE INCIDENT TRACKER (SIMULATED)
+// ========================
+// MITRE stages order
+const killChainStages = [
+  "Recon", "Resource Dev", "Initial Access", "Execution", 
+  "Persistence", "Privilege Esc", "Defense Evasion", "Credential Access", 
+  "Discovery", "Lateral Movement", "Collection", "Exfiltration", "Impact"
+];
+
+// Initial incidents data (live simulation)
+let activeIncidents = [
+  {
+    id: "INC-2401",
+    title: "Multi-stage incident: Persistence & Credential Access - multiple users",
+    severity: "critical",
+    currentStage: 6,  // Index of Credential Access (7th stage roughly)
+    progressPercent: 55,
+    status: "active",
+    startTime: "2025-04-20T08:23:00",
+    description: "Lateral movement via Pass-the-Hash, dumped LSASS from 3 endpoints."
+  },
+  {
+    id: "INC-2398",
+    title: "Ransomware precursor: Cobalt Strike beacon + discovery",
+    severity: "high",
+    currentStage: 3,  // Execution
+    progressPercent: 28,
+    status: "active",
+    startTime: "2025-04-20T12:15:00",
+    description: "PowerShell download cradle, observed process injection."
+  },
+  {
+    id: "INC-2403",
+    title: "Suspicious Office365 logins from Tor exit node",
+    severity: "critical",
+    currentStage: 2,  // Initial Access
+    progressPercent: 18,
+    status: "active",
+    startTime: "2025-04-21T02:10:00",
+    description: "Anonymous proxy sign-in, MFA fatigue suspected."
+  },
+  {
+    id: "INC-2395",
+    title: "Data staging and exfiltration attempt via MEGA cloud",
+    severity: "high",
+    currentStage: 10, // Exfiltration
+    progressPercent: 82,
+    status: "containment",
+    startTime: "2025-04-19T22:00:00",
+    description: "4.2GB compressed data uploaded to untrusted domain."
+  }
+];
+
+function getStageName(index) {
+  return killChainStages[index] || killChainStages[killChainStages.length-1];
+}
+
+function renderIncidentTracker() {
+  const container = document.getElementById('incident-tracker-list');
+  if (!container) return;
+  container.innerHTML = '';
+  activeIncidents.forEach((inc, idx) => {
+    // Build stage badges
+    let stagesHtml = '';
+    killChainStages.forEach((stage, i) => {
+      let badgeClass = '';
+      if (i < inc.currentStage) badgeClass = 'completed';
+      else if (i === inc.currentStage) badgeClass = 'current';
+      stagesHtml += `<span class="stage-badge ${badgeClass}">${stage.substring(0,4)}</span>`;
     });
-
-    chart.update();
-  } catch(e){}
-}, 4000);
-
-
-// =====================
-// 🌍 TOP ATTACK COUNTRIES
-// =====================
-setInterval(() => {
-  try {
-    const chart = Chart.getChart("countriesChart");
-    if (!chart) return;
-
-    chart.data.datasets[0].data =
-      chart.data.datasets[0].data.map(v => v + rand(-30, 60));
-
-    chart.update();
-  } catch(e){}
-}, 5000);
-
-
-// =====================
-// 🍩 ATTACK TYPE (Donut)
-// =====================
-setInterval(() => {
-  try {
-    const chart = Chart.getChart("donutChart");
-    if (!chart) return;
-
-    chart.data.datasets[0].data =
-      chart.data.datasets[0].data.map(v => v + rand(-150, 200));
-
-    chart.update();
-
-    // update total center
-    const total = chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
-    const center = document.querySelector('.panel.p-types .panel-body div div');
-    if (center) center.textContent = Math.round(total/1000) + "K";
-
-  } catch(e){}
-}, 6000);
-
-
-// =====================
-// 🔢 KPI (ALL tiles)
-// =====================
-setInterval(() => {
-  document.querySelectorAll('.kpi-value').forEach(el => {
-
-    let val = parseFloat(el.textContent) || 0;
-    let change = Math.random()*4 - 1.5;
-
-    val += change;
-
-    el.classList.add('updating');
-    el.textContent = Math.round(val * 10) / 10;
-
-    setTimeout(()=>el.classList.remove('updating'), 300);
-
+    
+    const sevClass = inc.severity === 'critical' ? 'critical' : 'high';
+    const statusLabel = inc.status === 'active' ? 'Active - In Progress' : 'Containment Phase';
+    const statusClass = inc.status === 'active' ? 'active' : '';
+    
+    const timeAgo = getTimeAgo(inc.startTime);
+    const progressWidth = inc.progressPercent;
+    const fillColor = inc.severity === 'critical' ? '#f1707b' : '#ff8c00';
+    
+    const card = `
+      <div class="incident-card ${sevClass}" data-id="${inc.id}">
+        <div class="incident-header">
+          <div>
+            <span class="incident-title">${inc.title}</span>
+            <div class="incident-id">${inc.id}</div>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <span class="incident-status ${statusClass}">${statusLabel}</span>
+            <span class="badge badge-${inc.severity}">${inc.severity}</span>
+          </div>
+        </div>
+        <div class="progress-container">
+          <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 6px;">
+            <span>MITRE ATT&CK Progression</span>
+            <span style="color: ${fillColor};">Current: ${getStageName(inc.currentStage)}</span>
+          </div>
+          <div class="mitre-stage-progress">
+            ${stagesHtml}
+          </div>
+          <div class="progress-bar-wrapper">
+            <div class="progress-fill" style="width: ${progressWidth}%; background: ${fillColor};"></div>
+          </div>
+          <div style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">${inc.description}</div>
+        </div>
+        <div class="incident-footer">
+          <span>🕒 Started: ${timeAgo}</span>
+          <span>⚡ Lifecycle: ${Math.round(progressWidth)}% complete</span>
+        </div>
+      </div>
+    `;
+    container.innerHTML += card;
   });
-}, 5000);
+  
+  document.getElementById('incident-count-badge').innerHTML = `Active: ${activeIncidents.filter(i=>i.status==='active').length}`;
+}
 
+function getTimeAgo(isoString) {
+  const diff = Math.floor((Date.now() - new Date(isoString)) / 1000 / 60);
+  if (diff < 60) return `${diff} min ago`;
+  if (diff < 1440) return `${Math.floor(diff/60)}h ${diff%60}m ago`;
+  return `${Math.floor(diff/1440)} days ago`;
+}
 
-// =====================
-// ❤️ SOC HEALTH (bars move)
-// =====================
+// ========================
+// SIMULATE LIVE INCIDENT PROGRESSION (dynamic for demo)
+// ========================
+let intervalId;
+function startIncidentSimulation() {
+  if (intervalId) clearInterval(intervalId);
+  intervalId = setInterval(() => {
+    // Update each incident's progress (random but plausible)
+    let changed = false;
+    activeIncidents = activeIncidents.map(inc => {
+      if (inc.status === 'containment') return inc; // resolved/containment stops progressing
+      // progress increment 2% to 8%
+      let increment = Math.random() * 6 + 2;
+      let newProgress = Math.min(inc.progressPercent + increment, 100);
+      let newStage = inc.currentStage;
+      if (newProgress >= 95 && newStage < killChainStages.length-1) {
+        newStage = killChainStages.length-1;
+        newProgress = 98;
+      } else if (newProgress > (inc.currentStage+1) * (100/killChainStages.length) && inc.currentStage < killChainStages.length-2) {
+        newStage = Math.min(inc.currentStage + 1, killChainStages.length-1);
+      }
+      if (newProgress >= 100) {
+        // Incident resolved/contained
+        changed = true;
+        return { ...inc, progressPercent: 100, currentStage: killChainStages.length-1, status: 'containment' };
+      }
+      if (newStage !== inc.currentStage || Math.abs(newProgress - inc.progressPercent) > 0.5) changed = true;
+      return { ...inc, progressPercent: Math.min(newProgress, 99), currentStage: newStage };
+    });
+    
+    // Occasionally add new incident to simulate Sentinel trigger
+    if (Math.random() > 0.65 && activeIncidents.length < 6) {
+      const newIncident = {
+        id: `INC-${Math.floor(Math.random()*9000+2500)}`,
+        title: "New Sentinel alert: Suspicious LSASS memory access + credential dumping tools",
+        severity: Math.random() > 0.6 ? 'critical' : 'high',
+        currentStage: 1,
+        progressPercent: 5,
+        status: 'active',
+        startTime: new Date().toISOString(),
+        description: "Mimikatz-like activity detected on domain controller. Investigation ongoing."
+      };
+      activeIncidents.unshift(newIncident);
+      changed = true;
+    }
+    
+    if (changed) {
+      renderIncidentTracker();
+      // update KPI insight dynamically
+      document.getElementById('incident-count-badge').innerHTML = `Active: ${activeIncidents.filter(i=>i.status==='active').length}`;
+    }
+  }, 7500); // update every 7.5 seconds for demo
+}
+
+// Also simulate EDR weekly data dynamic changes for demo (mock refresh)
 setInterval(() => {
-  document.querySelectorAll('.health-fill').forEach(bar => {
+  // simulate weekly data small shift
+  if (weeklyData.length) {
+    let lastWeek = weeklyData[weeklyData.length-1];
+    let slightDefender = Math.max(20, lastWeek.defender + (Math.random()*6 - 3));
+    let slightCS = Math.max(5, lastWeek.crowdstrike + (Math.random()*8 - 4));
+    weeklyData[weeklyData.length-1] = {
+      ...weeklyData[weeklyData.length-1],
+      defender: Math.round(slightDefender),
+      crowdstrike: Math.round(slightCS),
+      incidents: Math.max(1, Math.round(weeklyData[weeklyData.length-1].incidents + (Math.random()*2 -1)))
+    };
+    renderWeeklyTable();
+    renderEdrChart();
+  }
+}, 18000); // every 18 sec mild refresh
 
-    let current = parseInt(bar.style.width) || 70;
+// ========================
+// INITIAL RENDER
+// ========================
+renderWeeklyTable();
+renderEdrChart();
+renderIncidentTracker();
+startIncidentSimulation();
 
-    let newVal = current + rand(-2, 3);
-    newVal = Math.max(60, Math.min(100, newVal));
-
-    bar.style.width = newVal + "%";
-
-    const valText = bar.parentElement.nextElementSibling;
-    if (valText) valText.textContent = newVal + "%";
-
-  });
-}, 7000);
-
-
-// =====================
-// 🌊 MAP ATTACK FLOW (ADD ANIMATION)
-// =====================
-document.querySelectorAll('#map-svg line').forEach(line => {
-  line.innerHTML = `
-    <animate attributeName="stroke-dashoffset"
-             from="0" to="8"
-             dur="0.6s"
-             repeatCount="indefinite"/>
-  `;
+// Also ensure charts resize
+window.addEventListener('resize', () => {
+  if (window.edrChart) window.edrChart.resize();
 });
 </script>
 </body>
