@@ -71,6 +71,9 @@
   font-size: 10px;
   margin-top: 4px;
 }
+.trend-up-constant {
+  color: #16c60c;
+}
 
 /* Weekly Report Table */
 .weekly-table {
@@ -92,8 +95,7 @@
 .weekly-table tr:last-child td {
   border-bottom: none;
 }
-.trend-up { color: #f1707b; }
-.trend-down { color: #16c60c; }
+.trend-constant { color: #16c60c; }
 .badge-week {
   background: rgba(0,120,212,0.15);
   padding: 2px 8px;
@@ -208,6 +210,42 @@
   justify-content: space-between;
 }
 
+/* Auto-scroll control for exploit movement panel */
+.scroll-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.scroll-toggle {
+  width: 44px;
+  height: 22px;
+  background: rgba(0,120,212,0.2);
+  border-radius: 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  transition: all 0.2s;
+}
+
+.scroll-toggle.active {
+  background: rgba(0,120,212,0.5);
+}
+
+.scroll-knob {
+  width: 18px;
+  height: 18px;
+  background: var(--sentinel-blue);
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.scroll-toggle.active .scroll-knob {
+  transform: translateX(22px);
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
@@ -216,6 +254,19 @@
 /* Responsive */
 @media (max-width: 1000px) {
   .content { grid-template-columns: 1fr; }
+}
+
+/* Constant health indicators */
+.health-constant {
+  background: rgba(22,198,12,0.1);
+  border: 1px solid rgba(22,198,12,0.3);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: #16c60c;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 </style>
 </head>
@@ -250,7 +301,7 @@
   <!-- 2-PANEL MAIN CONTENT: 50/50 split -->
   <div class="content">
     
-    <!-- PANEL 1: EDR/XDR WEEKLY REPORT -->
+    <!-- PANEL 1: EDR/XDR WEEKLY REPORT - CONSTANT UPTIME -->
     <div class="panel-left">
       <div class="panel-header-sticky">
         <div style="display: flex; align-items: center; gap: 8px;">
@@ -261,25 +312,25 @@
         <div class="mini-stats">
           <div class="mini-card">
             <div class="label">Avg Weekly Alerts</div>
-            <div class="value" id="avg-alerts">148</div>
-            <div class="trend trend-down">▼ 12% vs last month</div>
+            <div class="value" id="avg-alerts">165</div>
+            <div class="trend trend-up-constant">▲ Stable performance</div>
           </div>
           <div class="mini-card">
             <div class="label">False Positive Rate</div>
-            <div class="value" id="fp-rate">8.2%</div>
-            <div class="trend trend-down">▼ 2% improved</div>
+            <div class="value" id="fp-rate">6.5%</div>
+            <div class="trend trend-up-constant">▼ Optimized</div>
           </div>
           <div class="mini-card">
             <div class="label">MTTD (hrs)</div>
-            <div class="value" id="mttd">1.4</div>
-            <div class="trend trend-down">▼ 0.3h</div>
+            <div class="value" id="mttd">1.1</div>
+            <div class="trend trend-up-constant">▼ Industry leading</div>
           </div>
         </div>
       </div>
       <div class="panel-scroll-body">
         <table class="weekly-table" id="weekly-edr-table">
           <thead>
-            <tr><th>Week</th><th>Defender Alerts</th><th>CrowdStrike Alerts</th><th>Incidents Opened</th><th>Trend</th></tr>
+            <tr><th>Week</th><th>Defender Alerts</th><th>CrowdStrike Alerts</th><th>Incidents Opened</th><th>Status</th></tr>
           </thead>
           <tbody id="edr-table-body">
             <!-- dynamic rows injected -->
@@ -291,25 +342,31 @@
         <div style="margin-top: 16px; padding: 12px; background: var(--bg-card); border-radius: 6px;">
           <div style="font-size: 11px; font-weight: 600; color: var(--text-bright);">🔍 Analyst Insight</div>
           <div style="font-size: 11px; color: var(--text-dim); margin-top: 6px;" id="weekly-insight">
-            CrowdStrike alert volume dropped significantly Week 14–15 due to sensor connectivity issues. Defender detections remain stable.
+            All EDR/XDR services operating at 100% uptime. Defender and CrowdStrike alert volumes stable within optimal baseline. Zero service disruptions recorded.
           </div>
         </div>
       </div>
     </div>
 
-    <!-- PANEL 2: EXPLOIT MOVEMENT - LIVE INCIDENT TRACKER -->
+    <!-- PANEL 2: EXPLOIT MOVEMENT - LIVE INCIDENT TRACKER WITH AUTO-SCROLL -->
     <div class="panel-right">
       <div class="panel-header-sticky">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span class="status-dot red pulse"></span>
           <span style="font-weight: 600; font-size: 14px;">Exploit Movement · Incident Lifecycle</span>
-          <span style="font-size: 10px; color: var(--text-dim); margin-left: auto;" id="incident-count-badge">Active: 4</span>
+          <span style="font-size: 10px; color: var(--text-dim);" id="incident-count-badge">Active: 4</span>
+          <div class="scroll-control">
+            <span style="font-size: 10px; color: var(--text-dim);">Auto-scroll</span>
+            <div class="scroll-toggle" id="scroll-toggle" onclick="toggleAutoScroll()">
+              <div class="scroll-knob"></div>
+            </div>
+          </div>
         </div>
         <div style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">
           Real-time progression from Initial Access → Impact (MITRE ATT&CK)
         </div>
       </div>
-      <div class="panel-scroll-body" id="incident-tracker-container">
+      <div class="panel-scroll-body" id="exploit-scroll-body">
         <div class="incident-tracker" id="incident-tracker-list">
           <!-- Incident cards injected here dynamically -->
         </div>
@@ -341,53 +398,41 @@ function handleLogo(e) {
 Chart.defaults.color='#8b949e'; Chart.defaults.font.family='Inter'; Chart.defaults.font.size=10;
 
 // ========================
-// EDR/XDR WEEKLY DATA (DYNAMIC)
+// EDR/XDR WEEKLY DATA - CONSTANT UPTIME, NO FLUCTUATIONS
 // ========================
-// Simulated weekly report: first week high, next week drop, etc.
 let weeklyData = [
-  { week: 'Week 1 (Mar 3-9)', defender: 210, crowdstrike: 145, incidents: 18, trend: 'up' },
-  { week: 'Week 2 (Mar 10-16)', defender: 198, crowdstrike: 138, incidents: 15, trend: 'down' },
-  { week: 'Week 3 (Mar 17-23)', defender: 225, crowdstrike: 152, incidents: 22, trend: 'up' },
-  { week: 'Week 4 (Mar 24-30)', defender: 189, crowdstrike: 98, incidents: 12, trend: 'down' },  // Drop in CS
-  { week: 'Week 5 (Mar 31-Apr 6)', defender: 142, crowdstrike: 52, incidents: 8, trend: 'critical' },
-  { week: 'Week 6 (Apr 7-13)', defender: 108, crowdstrike: 34, incidents: 5, trend: 'critical' },
-  { week: 'This Week (Apr 14-20)', defender: 86, crowdstrike: 28, incidents: 4, trend: 'recovery' }
+  { week: 'Week 1 (Mar 3-9)', defender: 165, crowdstrike: 158, incidents: 14, trend: 'up' },
+  { week: 'Week 2 (Mar 10-16)', defender: 167, crowdstrike: 160, incidents: 13, trend: 'up' },
+  { week: 'Week 3 (Mar 17-23)', defender: 164, crowdstrike: 159, incidents: 14, trend: 'up' },
+  { week: 'Week 4 (Mar 24-30)', defender: 166, crowdstrike: 161, incidents: 12, trend: 'up' },
+  { week: 'Week 5 (Mar 31-Apr 6)', defender: 165, crowdstrike: 158, incidents: 13, trend: 'up' },
+  { week: 'Week 6 (Apr 7-13)', defender: 167, crowdstrike: 160, incidents: 12, trend: 'up' },
+  { week: 'This Week (Apr 14-20)', defender: 166, crowdstrike: 159, incidents: 11, trend: 'up' }
 ];
 
 function renderWeeklyTable() {
   const tbody = document.getElementById('edr-table-body');
   tbody.innerHTML = '';
   weeklyData.forEach(w => {
-    let trendColor = '';
-    let trendIcon = '';
-    if (w.trend === 'up') { trendColor = '#f1707b'; trendIcon = '▲'; }
-    else if (w.trend === 'down') { trendColor = '#16c60c'; trendIcon = '▼'; }
-    else if (w.trend === 'critical') { trendColor = '#f1707b'; trendIcon = '⚠'; }
-    else { trendColor = '#ff8c00'; trendIcon = '↗'; }
-    
     const row = `<tr>
       <td><span class="badge-week">${w.week}</span></td>
       <td style="color:#2899f5;">${w.defender}</td>
       <td style="color:#f1707b;">${w.crowdstrike}</td>
       <td>${w.incidents}</td>
-      <td style="color:${trendColor};">${trendIcon} ${w.trend === 'critical' ? 'drop' : w.trend}</td>
+      <td style="color:#16c60c;">✅ Operational</td>
     </tr>`;
     tbody.innerHTML += row;
   });
   
-  // update insight based on latest weeks
-  const lastTwo = weeklyData.slice(-2);
-  const insightMsg = `CrowdStrike detections dropped from ${weeklyData[4].crowdstrike} to ${weeklyData[5].crowdstrike} in Week 5-6, sensor outage ongoing. Defender volume also decreased by 38% likely due to log filtering changes. Focus on EDR health check.`;
+  const insightMsg = `All EDR/XDR services operational at 100% uptime. Defender and CrowdStrike alert volumes stable within baseline (160-170 range). Zero service downtime recorded this month.`;
   document.getElementById('weekly-insight').innerHTML = `🔎 ${insightMsg}`;
   
-  // avg alerts
   const avgDef = (weeklyData.reduce((s,w)=>s+w.defender,0)/weeklyData.length).toFixed(0);
   document.getElementById('avg-alerts').innerText = avgDef;
-  document.getElementById('fp-rate').innerText = (7.2 + Math.random()*2).toFixed(1)+'%';
-  document.getElementById('mttd').innerText = (1.2 + Math.random()*0.5).toFixed(1);
+  document.getElementById('fp-rate').innerText = '6.5%';
+  document.getElementById('mttd').innerText = '1.1';
 }
 
-// Chart for EDR Trend (Defender + CrowdStrike over weeks)
 function renderEdrChart() {
   const ctx = document.getElementById('edrTrendChart').getContext('2d');
   const weeks = weeklyData.map(w => w.week.replace('Week ', 'W'));
@@ -400,35 +445,39 @@ function renderEdrChart() {
     data: {
       labels: weeks,
       datasets: [
-        { label: 'Defender Alerts', data: defenderData, borderColor: '#2899f5', backgroundColor: 'rgba(40,153,245,0.05)', fill: true, tension: 0.3, pointRadius: 3, borderWidth: 2 },
-        { label: 'CrowdStrike Alerts', data: csData, borderColor: '#f1707b', backgroundColor: 'rgba(241,112,123,0.05)', fill: true, tension: 0.3, pointRadius: 3, borderWidth: 2 }
+        { label: 'Defender Alerts', data: defenderData, borderColor: '#2899f5', backgroundColor: 'rgba(40,153,245,0.05)', fill: true, tension: 0.1, pointRadius: 4, pointBackgroundColor: '#2899f5', borderWidth: 2 },
+        { label: 'CrowdStrike Alerts', data: csData, borderColor: '#f1707b', backgroundColor: 'rgba(241,112,123,0.05)', fill: true, tension: 0.1, pointRadius: 4, pointBackgroundColor: '#f1707b', borderWidth: 2 }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: true,
-      plugins: { legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9 } } } },
-      scales: { x: { grid: { display: false }, ticks: { font: { size: 9 } } }, y: { grid: { color: 'rgba(255,255,255,0.04)' } } }
+      plugins: { 
+        legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9 } } },
+        tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw} alerts` } }
+      },
+      scales: { 
+        x: { grid: { display: false }, ticks: { font: { size: 9 } } }, 
+        y: { min: 140, max: 180, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { stepSize: 10 } }
+      }
     }
   });
 }
 
 // ========================
-// EXPLOIT MOVEMENT: LIVE INCIDENT TRACKER (SIMULATED)
+// EXPLOIT MOVEMENT: INCIDENT TRACKER WITH AUTO-SCROLL
 // ========================
-// MITRE stages order
 const killChainStages = [
-  "Recon", "Resource Dev", "Initial Access", "Execution", 
-  "Persistence", "Privilege Esc", "Defense Evasion", "Credential Access", 
-  "Discovery", "Lateral Movement", "Collection", "Exfiltration", "Impact"
+  "Recon", "Resource", "Init Access", "Execution", 
+  "Persistence", "Priv Esc", "Defense", "Cred Access", 
+  "Discovery", "Lateral", "Collection", "Exfil", "Impact"
 ];
 
-// Initial incidents data (live simulation)
 let activeIncidents = [
   {
     id: "INC-2401",
     title: "Multi-stage incident: Persistence & Credential Access - multiple users",
     severity: "critical",
-    currentStage: 6,  // Index of Credential Access (7th stage roughly)
+    currentStage: 6,
     progressPercent: 55,
     status: "active",
     startTime: "2025-04-20T08:23:00",
@@ -438,7 +487,7 @@ let activeIncidents = [
     id: "INC-2398",
     title: "Ransomware precursor: Cobalt Strike beacon + discovery",
     severity: "high",
-    currentStage: 3,  // Execution
+    currentStage: 3,
     progressPercent: 28,
     status: "active",
     startTime: "2025-04-20T12:15:00",
@@ -448,7 +497,7 @@ let activeIncidents = [
     id: "INC-2403",
     title: "Suspicious Office365 logins from Tor exit node",
     severity: "critical",
-    currentStage: 2,  // Initial Access
+    currentStage: 2,
     progressPercent: 18,
     status: "active",
     startTime: "2025-04-21T02:10:00",
@@ -458,13 +507,51 @@ let activeIncidents = [
     id: "INC-2395",
     title: "Data staging and exfiltration attempt via MEGA cloud",
     severity: "high",
-    currentStage: 10, // Exfiltration
+    currentStage: 10,
     progressPercent: 82,
     status: "containment",
     startTime: "2025-04-19T22:00:00",
     description: "4.2GB compressed data uploaded to untrusted domain."
   }
 ];
+
+// Auto-scroll variables
+let autoScrollEnabled = false;
+let scrollInterval = null;
+let scrollDirection = 1;
+
+function toggleAutoScroll() {
+  const toggle = document.getElementById('scroll-toggle');
+  autoScrollEnabled = !autoScrollEnabled;
+  
+  if (autoScrollEnabled) {
+    toggle.classList.add('active');
+    startAutoScroll();
+  } else {
+    toggle.classList.remove('active');
+    if (scrollInterval) {
+      clearInterval(scrollInterval);
+      scrollInterval = null;
+    }
+  }
+}
+
+function startAutoScroll() {
+  if (scrollInterval) clearInterval(scrollInterval);
+  
+  scrollInterval = setInterval(() => {
+    const scrollBody = document.getElementById('exploit-scroll-body');
+    if (!scrollBody || !autoScrollEnabled) return;
+    
+    scrollBody.scrollTop += scrollDirection;
+    
+    if (scrollBody.scrollTop + scrollBody.clientHeight >= scrollBody.scrollHeight - 30) {
+      scrollDirection = -1;
+    } else if (scrollBody.scrollTop <= 0) {
+      scrollDirection = 1;
+    }
+  }, 45);
+}
 
 function getStageName(index) {
   return killChainStages[index] || killChainStages[killChainStages.length-1];
@@ -474,8 +561,7 @@ function renderIncidentTracker() {
   const container = document.getElementById('incident-tracker-list');
   if (!container) return;
   container.innerHTML = '';
-  activeIncidents.forEach((inc, idx) => {
-    // Build stage badges
+  activeIncidents.forEach((inc) => {
     let stagesHtml = '';
     killChainStages.forEach((stage, i) => {
       let badgeClass = '';
@@ -536,19 +622,15 @@ function getTimeAgo(isoString) {
   return `${Math.floor(diff/1440)} days ago`;
 }
 
-// ========================
-// SIMULATE LIVE INCIDENT PROGRESSION (dynamic for demo)
-// ========================
+// Incident progression simulation
 let intervalId;
 function startIncidentSimulation() {
   if (intervalId) clearInterval(intervalId);
   intervalId = setInterval(() => {
-    // Update each incident's progress (random but plausible)
     let changed = false;
     activeIncidents = activeIncidents.map(inc => {
-      if (inc.status === 'containment') return inc; // resolved/containment stops progressing
-      // progress increment 2% to 8%
-      let increment = Math.random() * 6 + 2;
+      if (inc.status === 'containment') return inc;
+      let increment = Math.random() * 5 + 2;
       let newProgress = Math.min(inc.progressPercent + increment, 100);
       let newStage = inc.currentStage;
       if (newProgress >= 95 && newStage < killChainStages.length-1) {
@@ -558,7 +640,6 @@ function startIncidentSimulation() {
         newStage = Math.min(inc.currentStage + 1, killChainStages.length-1);
       }
       if (newProgress >= 100) {
-        // Incident resolved/contained
         changed = true;
         return { ...inc, progressPercent: 100, currentStage: killChainStages.length-1, status: 'containment' };
       }
@@ -566,8 +647,7 @@ function startIncidentSimulation() {
       return { ...inc, progressPercent: Math.min(newProgress, 99), currentStage: newStage };
     });
     
-    // Occasionally add new incident to simulate Sentinel trigger
-    if (Math.random() > 0.65 && activeIncidents.length < 6) {
+    if (Math.random() > 0.75 && activeIncidents.length < 6) {
       const newIncident = {
         id: `INC-${Math.floor(Math.random()*9000+2500)}`,
         title: "New Sentinel alert: Suspicious LSASS memory access + credential dumping tools",
@@ -580,33 +660,21 @@ function startIncidentSimulation() {
       };
       activeIncidents.unshift(newIncident);
       changed = true;
+      
+      // When new incident added, reset scroll direction to top
+      if (autoScrollEnabled) {
+        const scrollBody = document.getElementById('exploit-scroll-body');
+        if (scrollBody) scrollBody.scrollTop = 0;
+        scrollDirection = 1;
+      }
     }
     
     if (changed) {
       renderIncidentTracker();
-      // update KPI insight dynamically
       document.getElementById('incident-count-badge').innerHTML = `Active: ${activeIncidents.filter(i=>i.status==='active').length}`;
     }
-  }, 7500); // update every 7.5 seconds for demo
+  }, 10000);
 }
-
-// Also simulate EDR weekly data dynamic changes for demo (mock refresh)
-setInterval(() => {
-  // simulate weekly data small shift
-  if (weeklyData.length) {
-    let lastWeek = weeklyData[weeklyData.length-1];
-    let slightDefender = Math.max(20, lastWeek.defender + (Math.random()*6 - 3));
-    let slightCS = Math.max(5, lastWeek.crowdstrike + (Math.random()*8 - 4));
-    weeklyData[weeklyData.length-1] = {
-      ...weeklyData[weeklyData.length-1],
-      defender: Math.round(slightDefender),
-      crowdstrike: Math.round(slightCS),
-      incidents: Math.max(1, Math.round(weeklyData[weeklyData.length-1].incidents + (Math.random()*2 -1)))
-    };
-    renderWeeklyTable();
-    renderEdrChart();
-  }
-}, 18000); // every 18 sec mild refresh
 
 // ========================
 // INITIAL RENDER
@@ -616,7 +684,6 @@ renderEdrChart();
 renderIncidentTracker();
 startIncidentSimulation();
 
-// Also ensure charts resize
 window.addEventListener('resize', () => {
   if (window.edrChart) window.edrChart.resize();
 });
