@@ -39,6 +39,8 @@
   flex: 1;
   overflow-y: auto;
   padding: 12px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* KPI mini cards inside panels */
@@ -102,6 +104,20 @@
   border-radius: 12px;
   font-size: 10px;
   color: var(--sentinel-blue);
+}
+
+/* CHART CONTAINER - EXTENDED TO FILL SPACE */
+.chart-container {
+  flex: 1;
+  min-height: 260px;
+  margin-top: 8px;
+  margin-bottom: 16px;
+  position: relative;
+  width: 100%;
+}
+.chart-container canvas {
+  max-height: 100%;
+  width: 100%;
 }
 
 /* Incident Progress Tracker */
@@ -268,6 +284,15 @@
   align-items: center;
   gap: 6px;
 }
+
+/* Insight panel */
+.insight-panel {
+  margin-top: auto;
+  padding: 12px;
+  background: var(--bg-card);
+  border-radius: 6px;
+  flex-shrink: 0;
+}
 </style>
 </head>
 <body>
@@ -336,10 +361,13 @@
             <!-- dynamic rows injected -->
           </tbody>
         </table>
-        <div style="margin-top: 20px;">
-          <canvas id="edrTrendChart" style="height:180px; width:100%;"></canvas>
+        
+        <!-- CHART CONTAINER - EXTENDED TO FILL SPACE -->
+        <div class="chart-container">
+          <canvas id="edrTrendChart" style="height: 100%; width: 100%;"></canvas>
         </div>
-        <div style="margin-top: 16px; padding: 12px; background: var(--bg-card); border-radius: 6px;">
+        
+        <div class="insight-panel">
           <div style="font-size: 11px; font-weight: 600; color: var(--text-bright);">🔍 Analyst Insight</div>
           <div style="font-size: 11px; color: var(--text-dim); margin-top: 6px;" id="weekly-insight">
             All EDR/XDR services operating at 100% uptime. Defender and CrowdStrike alert volumes stable within optimal baseline. Zero service disruptions recorded.
@@ -433,6 +461,7 @@ function renderWeeklyTable() {
   document.getElementById('mttd').innerText = '1.1';
 }
 
+// Chart for EDR Trend - FLAT LINE with larger canvas
 function renderEdrChart() {
   const ctx = document.getElementById('edrTrendChart').getContext('2d');
   const weeks = weeklyData.map(w => w.week.replace('Week ', 'W'));
@@ -445,19 +474,20 @@ function renderEdrChart() {
     data: {
       labels: weeks,
       datasets: [
-        { label: 'Defender Alerts', data: defenderData, borderColor: '#2899f5', backgroundColor: 'rgba(40,153,245,0.05)', fill: true, tension: 0.1, pointRadius: 4, pointBackgroundColor: '#2899f5', borderWidth: 2 },
-        { label: 'CrowdStrike Alerts', data: csData, borderColor: '#f1707b', backgroundColor: 'rgba(241,112,123,0.05)', fill: true, tension: 0.1, pointRadius: 4, pointBackgroundColor: '#f1707b', borderWidth: 2 }
+        { label: 'Defender Alerts', data: defenderData, borderColor: '#2899f5', backgroundColor: 'rgba(40,153,245,0.08)', fill: true, tension: 0.1, pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: '#2899f5', borderWidth: 2.5 },
+        { label: 'CrowdStrike Alerts', data: csData, borderColor: '#f1707b', backgroundColor: 'rgba(241,112,123,0.06)', fill: true, tension: 0.1, pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: '#f1707b', borderWidth: 2.5 }
       ]
     },
     options: {
-      responsive: true, maintainAspectRatio: true,
+      responsive: true,
+      maintainAspectRatio: true,
       plugins: { 
-        legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9 } } },
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 12, font: { size: 10, weight: '500' } } },
         tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw} alerts` } }
       },
       scales: { 
-        x: { grid: { display: false }, ticks: { font: { size: 9 } } }, 
-        y: { min: 140, max: 180, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { stepSize: 10 } }
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } }, 
+        y: { min: 140, max: 180, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { stepSize: 10, font: { size: 10 } } }
       }
     }
   });
@@ -661,7 +691,6 @@ function startIncidentSimulation() {
       activeIncidents.unshift(newIncident);
       changed = true;
       
-      // When new incident added, reset scroll direction to top
       if (autoScrollEnabled) {
         const scrollBody = document.getElementById('exploit-scroll-body');
         if (scrollBody) scrollBody.scrollTop = 0;
