@@ -8,156 +8,146 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 .page { display: flex; flex-direction: column; height: 100vh; }
-.content { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto 1fr; gap: 12px; padding: 12px; overflow: hidden; }
+.content { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: 20px; padding: 20px; overflow: hidden; }
 
 /* KPI row spans full width */
-.kpi-row { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.kpi-row { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 
-/* Service cards and charts */
-.services-grid { grid-column: 1 / 2; grid-row: 2 / 4; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
-.charts-area { grid-column: 2 / 3; grid-row: 2 / 3; display: flex; flex-direction: column; gap: 12px; }
-.incident-history { grid-column: 2 / 3; grid-row: 3 / 4; background: var(--bg-panel); border-radius: 6px; border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+/* Service cards */
+.services-grid { grid-column: 1 / 2; grid-row: 2 / 3; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+.charts-area { grid-column: 2 / 3; grid-row: 2 / 3; display: flex; flex-direction: column; gap: 20px; }
 
-/* Service Health Cards */
+/* Service Health Cards - Larger & Cleaner */
 .service-card {
   background: var(--bg-card);
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid var(--border);
-  padding: 14px 16px;
+  padding: 20px 24px;
   transition: all 0.2s;
-  animation: fadeSlideUp 0.3s ease;
 }
 .service-card-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 .service-icon {
-  width: 36px; height: 36px;
-  border-radius: 8px;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
   background: rgba(0,120,212,0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 26px;
 }
 .service-name {
   flex: 1;
-  font-weight: 600;
-  font-size: 15px;
+  font-weight: 700;
+  font-size: 18px;
   color: var(--text-bright);
 }
 .service-status {
-  font-size: 11px;
-  padding: 4px 12px;
-  border-radius: 20px;
+  font-size: 13px;
+  padding: 6px 16px;
+  border-radius: 30px;
+  font-weight: 500;
 }
 .status-operational {
   background: rgba(22,198,12,0.15);
   color: #16c60c;
   border: 1px solid rgba(22,198,12,0.3);
 }
-.status-degraded {
-  background: rgba(255,140,0,0.15);
-  color: #ff8c00;
-  border: 1px solid rgba(255,140,0,0.3);
-}
-.status-outage {
-  background: rgba(241,112,123,0.15);
-  color: #f1707b;
-  border: 1px solid rgba(241,112,123,0.3);
-}
 .uptime-stats {
   display: flex;
-  gap: 24px;
-  margin-bottom: 12px;
+  gap: 32px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
 }
 .uptime-item {
-  text-align: center;
+  text-align: left;
 }
 .uptime-label {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-dim);
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
 }
 .uptime-value {
-  font-size: 20px;
+  font-size: 28px;
   font-weight: 700;
   color: var(--text-bright);
 }
-.incident-badge {
-  font-size: 10px;
-  background: rgba(241,112,123,0.12);
-  padding: 2px 8px;
-  border-radius: 12px;
-  display: inline-block;
-}
-.progress-bar-bg {
-  background: rgba(255,255,255,0.08);
-  border-radius: 10px;
-  height: 6px;
-  overflow: hidden;
-  margin: 8px 0;
-}
-.progress-fill-health {
-  height: 100%;
-  width: 0%;
-  border-radius: 10px;
-  transition: width 0.6s ease;
-}
-/* Chart containers */
-.chart-card {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px;
-}
-.chart-title {
+.uptime-unit {
   font-size: 12px;
-  font-weight: 600;
-  color: var(--text-bright);
-  margin-bottom: 12px;
+  color: var(--text-dim);
+  margin-left: 2px;
+}
+.uptime-note {
+  font-size: 11px;
+  color: #16c60c;
+  margin-top: 8px;
   display: flex;
   align-items: center;
   gap: 6px;
 }
-.incident-history-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
+
+.progress-bar-bg {
+  background: rgba(255,255,255,0.08);
+  border-radius: 20px;
+  height: 8px;
+  overflow: hidden;
+  margin: 12px 0 8px;
 }
-.history-item {
+.progress-fill-health {
+  height: 100%;
+  width: 100%;
+  border-radius: 20px;
+  background: #16c60c;
+  transition: width 0.6s ease;
+}
+
+/* Chart Cards */
+.chart-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+.chart-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin-bottom: 20px;
   display: flex;
-  gap: 12px;
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  font-size: 11px;
   align-items: center;
+  gap: 10px;
 }
-.history-time {
-  font-family: monospace;
-  font-size: 10px;
-  color: var(--text-dim);
-  min-width: 70px;
+.chart-container {
+  position: relative;
+  height: 220px;
 }
-.history-service {
-  font-weight: 500;
-  min-width: 110px;
+
+/* Constant uptime badge */
+.constant-badge {
+  background: rgba(22,198,12,0.12);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 11px;
+  color: #16c60c;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
-.history-desc {
-  flex: 1;
-  color: var(--text);
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .content { grid-template-columns: 1fr; }
+  .services-grid { grid-column: 1; }
+  .charts-area { grid-column: 1; }
 }
-.history-status {
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-@keyframes fadeSlideUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+
+/* No incident history - removed */
 </style>
 </head>
 <body>
@@ -172,7 +162,7 @@
     </div>
     <div>
       <div class="topbar-title">Axiata Cyber Fusion Center</div>
-      <div class="topbar-sub">SOC Health — Service Uptime & Incident History</div>
+      <div class="topbar-sub">SOC Health — Service Uptime Monitor</div>
     </div>
     <nav class="topbar-nav">
       <a href="index.html" class="nav-item">Overview</a>
@@ -190,125 +180,172 @@
 
   <div class="content">
 
-    <!-- KPI Row: Overall Uptime Summary -->
+    <!-- KPI Row: Overall Uptime Summary - CONSTANT -->
     <div class="kpi-row">
-      <div class="panel" style="padding: 12px 16px; border-left: 3px solid #16c60c;">
-        <div style="font-size: 10px; color: var(--text-dim);">Overall System Uptime (30d)</div>
-        <div style="font-size: 28px; font-weight: 700; color: #16c60c;" id="overall-uptime">99.82%</div>
-        <div style="font-size: 10px;">▲ 0.12% from last month</div>
+      <div class="panel" style="padding: 16px 20px; border-left: 4px solid #16c60c;">
+        <div style="font-size: 11px; color: var(--text-dim); letter-spacing: 0.5px;">Overall System Uptime (30d)</div>
+        <div style="font-size: 36px; font-weight: 700; color: #16c60c;" id="overall-uptime">100%</div>
+        <div style="font-size: 11px; color: #16c60c; margin-top: 4px;">▲ Constant uptime across all services</div>
       </div>
-      <div class="panel" style="padding: 12px 16px; border-left: 3px solid #ff8c00;">
-        <div style="font-size: 10px; color: var(--text-dim);">Total Incidents (7d)</div>
-        <div style="font-size: 28px; font-weight: 700; color: #ff8c00;" id="total-incidents">8</div>
-        <div style="font-size: 10px;">3 resolved, 5 ongoing</div>
+      <div class="panel" style="padding: 16px 20px; border-left: 4px solid #2899f5;">
+        <div style="font-size: 11px; color: var(--text-dim);">Services Monitored</div>
+        <div style="font-size: 36px; font-weight: 700; color: #2899f5;">4</div>
+        <div style="font-size: 11px; color: var(--text-dim);">All operational</div>
       </div>
-      <div class="panel" style="padding: 12px 16px; border-left: 3px solid #2899f5;">
-        <div style="font-size: 10px; color: var(--text-dim);">Mean Time To Detect (MTTD)</div>
-        <div style="font-size: 28px; font-weight: 700; color: #2899f5;" id="mttd-health">1.8m</div>
-        <div style="font-size: 10px;">▼ 0.4m improvement</div>
+      <div class="panel" style="padding: 16px 20px; border-left: 4px solid #16c60c;">
+        <div style="font-size: 11px; color: var(--text-dim);">MTTR (Mean Time to Resolve)</div>
+        <div style="font-size: 36px; font-weight: 700; color: #16c60c;">0m</div>
+        <div style="font-size: 11px; color: #16c60c;">No incidents recorded</div>
       </div>
-      <div class="panel" style="padding: 12px 16px; border-left: 3px solid #9d88f0;">
-        <div style="font-size: 10px; color: var(--text-dim);">Active Degradations</div>
-        <div style="font-size: 28px; font-weight: 700; color: #f1707b;" id="active-degradations">1</div>
-        <div style="font-size: 10px;">CrowdStrike telemetry delay</div>
+      <div class="panel" style="padding: 16px 20px; border-left: 4px solid #16c60c;">
+        <div style="font-size: 11px; color: var(--text-dim);">Active Degradations</div>
+        <div style="font-size: 36px; font-weight: 700; color: #16c60c;">0</div>
+        <div style="font-size: 11px; color: #16c60c;">All systems nominal</div>
       </div>
     </div>
 
-    <!-- LEFT COLUMN: Detailed Service Cards -->
+    <!-- LEFT COLUMN: Detailed Service Cards (ALWAYS CONSTANT UPTIME - 100%) -->
     <div class="services-grid">
       <!-- Microsoft Sentinel -->
-      <div class="service-card" id="card-sentinel">
+      <div class="service-card">
         <div class="service-card-header">
           <div class="service-icon">🔍</div>
           <div class="service-name">Microsoft Sentinel</div>
-          <div class="service-status status-operational" id="sentinel-status-badge">Operational</div>
+          <div class="service-status status-operational">Operational</div>
         </div>
         <div class="uptime-stats">
-          <div class="uptime-item"><div class="uptime-label">30d Uptime</div><div class="uptime-value" id="sentinel-uptime">99.95%</div></div>
-          <div class="uptime-item"><div class="uptime-label">Log Ingestion Lag</div><div class="uptime-value" id="sentinel-lag">~2min</div></div>
-          <div class="uptime-item"><div class="uptime-label">Incidents (7d)</div><div class="uptime-value" id="sentinel-incidents">142</div></div>
+          <div class="uptime-item">
+            <div class="uptime-label">30-Day Uptime</div>
+            <div class="uptime-value">100<span class="uptime-unit">%</span></div>
+          </div>
+          <div class="uptime-item">
+            <div class="uptime-label">Data Ingestion</div>
+            <div class="uptime-value">Real-time</div>
+          </div>
+          <div class="uptime-item">
+            <div class="uptime-label">Alert Latency</div>
+            <div class="uptime-value">&lt;2<span class="uptime-unit">min</span></div>
+          </div>
         </div>
-        <div class="progress-bar-bg"><div class="progress-fill-health" id="sentinel-bar" style="width: 100%; background: #16c60c;"></div></div>
-        <div style="font-size: 10px; color: var(--text-dim); margin-top: 6px;">✅ All data connectors healthy · No backlog</div>
+        <div class="progress-bar-bg"><div class="progress-fill-health" style="width: 100%; background: #16c60c;"></div></div>
+        <div class="uptime-note">
+          <span>✅</span> All connectors healthy · No backlog · 100% availability
+        </div>
       </div>
 
       <!-- Microsoft Defender XDR -->
-      <div class="service-card" id="card-defender">
+      <div class="service-card">
         <div class="service-card-header">
           <div class="service-icon">🛡️</div>
           <div class="service-name">Microsoft Defender XDR</div>
           <div class="service-status status-operational">Operational</div>
         </div>
         <div class="uptime-stats">
-          <div class="uptime-item"><div class="uptime-label">30d Uptime</div><div class="uptime-value" id="defender-uptime">99.98%</div></div>
-          <div class="uptime-item"><div class="uptime-label">Sensor Health</div><div class="uptime-value">98.2%</div></div>
-          <div class="uptime-item"><div class="uptime-label">Alerts (7d)</div><div class="uptime-value">1,283</div></div>
+          <div class="uptime-item">
+            <div class="uptime-label">30-Day Uptime</div>
+            <div class="uptime-value">100<span class="uptime-unit">%</span></div>
+          </div>
+          <div class="uptime-item">
+            <div class="uptime-label">Sensor Health</div>
+            <div class="uptime-value">100<span class="uptime-unit">%</span></div>
+          </div>
+          <div class="uptime-item">
+            <div class="uptime-label">Endpoints</div>
+            <div class="uptime-value">1,284</div>
+          </div>
         </div>
         <div class="progress-bar-bg"><div class="progress-fill-health" style="width: 100%; background: #16c60c;"></div></div>
-        <div style="font-size: 10px; color: var(--text-dim);">✅ 1,241 endpoints reporting · No critical alerts</div>
+        <div class="uptime-note">
+          <span>✅</span> All sensors reporting · No critical alerts
+        </div>
       </div>
 
-      <!-- CrowdStrike Falcon (Degraded demo) -->
-      <div class="service-card" id="card-crowdstrike">
+      <!-- CrowdStrike Falcon - NOW CONSTANT 100% -->
+      <div class="service-card">
         <div class="service-card-header">
           <div class="service-icon">🦅</div>
           <div class="service-name">CrowdStrike Falcon</div>
-          <div class="service-status status-degraded" id="cs-status-badge">Degraded</div>
+          <div class="service-status status-operational">Operational</div>
         </div>
         <div class="uptime-stats">
-          <div class="uptime-item"><div class="uptime-label">30d Uptime</div><div class="uptime-value" id="cs-uptime">97.4%</div></div>
-          <div class="uptime-item"><div class="uptime-label">Sensor Coverage</div><div class="uptime-value" id="cs-coverage">87%</div></div>
-          <div class="uptime-item"><div class="uptime-label">Alert Drop</div><div class="uptime-value" style="color:#ff8c00;">-72%</div></div>
+          <div class="uptime-item">
+            <div class="uptime-label">30-Day Uptime</div>
+            <div class="uptime-value">100<span class="uptime-unit">%</span></div>
+          </div>
+          <div class="uptime-item">
+            <div class="uptime-label">Sensor Coverage</div>
+            <div class="uptime-value">100<span class="uptime-unit">%</span></div>
+          </div>
+          <div class="uptime-item">
+            <div class="uptime-label">Alert Volume</div>
+            <div class="uptime-value">Normal</div>
+          </div>
         </div>
-        <div class="progress-bar-bg"><div class="progress-fill-health" id="cs-bar" style="width: 87%; background: #ff8c00;"></div></div>
-        <div style="font-size: 10px; color: #ff8c00;">⚠️ Sensor outage affecting WS-041 through WS-085 · Investigation ongoing</div>
+        <div class="progress-bar-bg"><div class="progress-fill-health" style="width: 100%; background: #16c60c;"></div></div>
+        <div class="uptime-note">
+          <span>✅</span> All sensors online · Telemetry flowing normally
+        </div>
       </div>
 
       <!-- SDP Ticketing Tool -->
-      <div class="service-card" id="card-sdp">
+      <div class="service-card">
         <div class="service-card-header">
           <div class="service-icon">🎫</div>
           <div class="service-name">SDP Ticketing System</div>
           <div class="service-status status-operational">Operational</div>
         </div>
         <div class="uptime-stats">
-          <div class="uptime-item"><div class="uptime-label">30d Uptime</div><div class="uptime-value">99.91%</div></div>
-          <div class="uptime-item"><div class="uptime-label">API Response</div><div class="uptime-value">~210ms</div></div>
-          <div class="uptime-item"><div class="uptime-label">Tickets (week)</div><div class="uptime-value">234</div></div>
+          <div class="uptime-item">
+            <div class="uptime-label">30-Day Uptime</div>
+            <div class="uptime-value">100<span class="uptime-unit">%</span></div>
+          </div>
+          <div class="uptime-item">
+            <div class="uptime-label">API Response</div>
+            <div class="uptime-value">&lt;200<span class="uptime-unit">ms</span></div>
+          </div>
+          <div class="uptime-item">
+            <div class="uptime-label">Sync Status</div>
+            <div class="uptime-value">Active</div>
+          </div>
         </div>
         <div class="progress-bar-bg"><div class="progress-fill-health" style="width: 100%; background: #16c60c;"></div></div>
-        <div style="font-size: 10px; color: var(--text-dim);">✅ Integration with Sentinel active · SLA 99.9%</div>
+        <div class="uptime-note">
+          <span>✅</span> Integration with Sentinel active · SLA 100%
+        </div>
       </div>
     </div>
 
-    <!-- RIGHT COLUMN CHARTS & INCIDENT HISTORY -->
+    <!-- RIGHT COLUMN: CHARTS (CONSTANT UPTIME - NO FLUCTUATIONS, NO DOWNTIME) -->
     <div class="charts-area">
-      <!-- Weekly Uptime Trend (All services) -->
+      <!-- Weekly Uptime Trend (All services - CONSTANT 100%) -->
       <div class="chart-card">
         <div class="chart-title">
           <span class="status-dot green pulse"></span>
           Weekly Uptime Trend — Last 6 Weeks
+          <span class="constant-badge">📊 100% Uptime (Constant)</span>
         </div>
-        <canvas id="uptimeTrendChart" style="height: 180px; width: 100%;"></canvas>
+        <div class="chart-container">
+          <canvas id="uptimeTrendChart" style="height: 200px; width: 100%;"></canvas>
+        </div>
       </div>
-      <!-- Downtime / Degradation Bar Chart -->
+      
+      <!-- Service Health Overview - CONSTANT (No downtime bars - changed to health overview) -->
       <div class="chart-card">
         <div class="chart-title">
-          <span class="status-dot amber"></span>
-          Service Downtime Minutes (Weekly)
+          <span class="status-dot green"></span>
+          Service Health Overview
+          <span class="constant-badge">✅ All Services Operational</span>
         </div>
-        <canvas id="downtimeChart" style="height: 160px; width: 100%;"></canvas>
+        <div class="chart-container">
+          <canvas id="healthOverviewChart" style="height: 200px; width: 100%;"></canvas>
+        </div>
       </div>
-    </div>
 
-    <!-- Incident History Log -->
-    <div class="incident-history">
-      <div class="panel-header">
-        <span class="panel-title">📋 Service Incident History</span>
-        <span class="panel-subtitle">Last 7 days · Real-time updates</span>
-      </div>
-      <div class="incident-history-list" id="incident-history-list">
-        <!-- Dynamic incident log items -->
+      <!-- Simple status message -->
+      <div class="panel" style="padding: 20px; text-align: center; background: rgba(22,198,12,0.05); border: 1px solid rgba(22,198,12,0.2); border-radius: 12px;">
+        <div style="font-size: 48px; margin-bottom: 12px;">🟢</div>
+        <div style="font-size: 16px; font-weight: 600; color: #16c60c; margin-bottom: 8px;">All Systems Operational</div>
+        <div style="font-size: 12px; color: var(--text-dim);">No service disruptions reported in the last 30 days. 100% uptime maintained across all SOC services.</div>
       </div>
     </div>
 
@@ -325,202 +362,119 @@ function tick() {
 setInterval(tick,1000); tick();
 
 function handleLogo(e) {
-  const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader(); r.onload=ev=>{
-    document.getElementById('logo-img').src=ev.target.result;
-    document.getElementById('logo-img').style.display='block';
-    document.querySelector('.topbar-logo-placeholder').style.display='none';
-  }; r.readAsDataURL(f);
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    document.getElementById('logo-img').src = ev.target.result;
+    document.getElementById('logo-img').style.display = 'block';
+    document.querySelector('.topbar-logo-placeholder').style.display = 'none';
+  };
+  r.readAsDataURL(f);
 }
 
 Chart.defaults.color = '#8b949e';
 Chart.defaults.font.family = 'Inter';
-Chart.defaults.font.size = 10;
+Chart.defaults.font.size = 11;
 
-// ========== SERVICE DATA (MOCK DYNAMIC) ==========
-let servicesHealth = {
-  sentinel: { uptime30d: 99.95, status: "operational", lag: "2min", incidents7d: 142, barWidth: 100, color: "#16c60c" },
-  defender: { uptime30d: 99.98, status: "operational", coverage: 98.2, barWidth: 100, color: "#16c60c" },
-  crowdstrike: { uptime30d: 97.4, status: "degraded", coverage: 87, alertDrop: -72, barWidth: 87, color: "#ff8c00" },
-  sdp: { uptime30d: 99.91, status: "operational", barWidth: 100, color: "#16c60c" }
-};
+// ========== CONSTANT DATA - NO DOWNTIME, ALL AT 100% ==========
+const weeks = ['Week 11', 'Week 12', 'Week 13', 'Week 14', 'Week 15', 'This Week'];
 
-// Historical incident log entries
-let incidentLog = [
-  { time: "2025-04-24 08:23", service: "CrowdStrike", desc: "Sensor heartbeat loss on 43 endpoints (WS-041-WS-085)", status: "monitoring", severity: "degraded" },
-  { time: "2025-04-23 14:10", service: "Sentinel", desc: "Log analytics ingestion delay ~12 minutes, auto-resolved", status: "resolved", severity: "operational" },
-  { time: "2025-04-22 22:45", service: "SDP", desc: "API rate limiting caused 5-minute ticket sync delay", status: "resolved", severity: "operational" },
-  { time: "2025-04-21 09:30", service: "Defender", desc: "Sensor update pushed, 98% endpoints reporting normally", status: "resolved", severity: "operational" },
-  { time: "2025-04-20 18:15", service: "CrowdStrike", desc: "Alert volume dropped 70% below baseline (possible telemetry block)", status: "investigating", severity: "degraded" },
-  { time: "2025-04-19 11:02", service: "Sentinel", desc: "Scheduled maintenance — no impact on alerting", status: "resolved", severity: "operational" }
-];
+// All services at 100% uptime (constant)
+const sentinelUptime = [100, 100, 100, 100, 100, 100];
+const defenderUptime = [100, 100, 100, 100, 100, 100];
+const crowdstrikeUptime = [100, 100, 100, 100, 100, 100];
+const sdpUptime = [100, 100, 100, 100, 100, 100];
 
-function renderServiceCards() {
-  document.getElementById('sentinel-uptime').innerText = servicesHealth.sentinel.uptime30d + '%';
-  document.getElementById('sentinel-lag').innerText = servicesHealth.sentinel.lag;
-  document.getElementById('sentinel-incidents').innerText = servicesHealth.sentinel.incidents7d;
-  document.getElementById('sentinel-bar').style.width = servicesHealth.sentinel.barWidth + '%';
-  document.getElementById('sentinel-bar').style.background = servicesHealth.sentinel.color;
-  
-  document.getElementById('defender-uptime').innerText = servicesHealth.defender.uptime30d + '%';
-  
-  document.getElementById('cs-uptime').innerText = servicesHealth.crowdstrike.uptime30d + '%';
-  document.getElementById('cs-coverage').innerText = servicesHealth.crowdstrike.coverage + '%';
-  document.getElementById('cs-bar').style.width = servicesHealth.crowdstrike.barWidth + '%';
-  document.getElementById('cs-bar').style.background = servicesHealth.crowdstrike.color;
-  
-  const csStatusBadge = document.getElementById('cs-status-badge');
-  if (servicesHealth.crowdstrike.status === 'degraded') {
-    csStatusBadge.className = 'service-status status-degraded';
-    csStatusBadge.innerText = 'Degraded';
-  } else {
-    csStatusBadge.className = 'service-status status-operational';
-    csStatusBadge.innerText = 'Operational';
-  }
-  
-  let activeDeg = 0;
-  if (servicesHealth.crowdstrike.status === 'degraded') activeDeg = 1;
-  document.getElementById('active-degradations').innerText = activeDeg;
-  
-  // overall uptime avg weighted
-  let avgUptime = (servicesHealth.sentinel.uptime30d + servicesHealth.defender.uptime30d + servicesHealth.crowdstrike.uptime30d + servicesHealth.sdp.uptime30d)/4;
-  document.getElementById('overall-uptime').innerText = avgUptime.toFixed(2) + '%';
-  document.getElementById('total-incidents').innerText = incidentLog.filter(i => i.status !== 'resolved').length;
-  document.getElementById('mttd-health').innerText = (1.4 + Math.random()*0.8).toFixed(1) + 'm';
-}
-
-function renderIncidentHistory() {
-  const container = document.getElementById('incident-history-list');
-  container.innerHTML = '';
-  incidentLog.slice(0, 12).forEach(ev => {
-    const statusColor = ev.status === 'resolved' ? '#16c60c' : (ev.severity === 'degraded' ? '#ff8c00' : '#2899f5');
-    container.innerHTML += `
-      <div class="history-item">
-        <div class="history-time">${ev.time}</div>
-        <div class="history-service"><strong>${ev.service}</strong></div>
-        <div class="history-desc">${ev.desc}</div>
-        <div class="history-status" style="background: ${statusColor}20; color: ${statusColor}; border:1px solid ${statusColor}40;">${ev.status}</div>
-      </div>
-    `;
-  });
-}
-
-// ========== CHARTS: Weekly Uptime & Downtime ==========
-const weeks = ['W11 (Mar 10-16)', 'W12 (Mar 17-23)', 'W13 (Mar 24-30)', 'W14 (Mar 31-Apr 6)', 'W15 (Apr 7-13)', 'This Week'];
-// Uptime percentages per service per week (mock)
-const sentinelUptime = [99.98, 99.95, 99.92, 99.97, 99.94, 99.96];
-const defenderUptime = [99.99, 99.97, 99.96, 99.98, 99.95, 99.97];
-const crowdstrikeUptime = [99.2, 98.7, 98.1, 96.5, 95.2, 97.4];
-const sdpUptime = [99.93, 99.91, 99.94, 99.89, 99.92, 99.91];
-
-// Downtime minutes per week (simulated)
-const sentinelDowntime = [2, 5, 8, 3, 6, 4];
-const defenderDowntime = [1, 3, 4, 2, 5, 3];
-const crowdstrikeDowntime = [45, 78, 112, 210, 340, 158];
-const sdpDowntime = [7, 9, 6, 11, 8, 9];
-
-let uptimeChart, downtimeChart;
-
+// Uptime Trend Chart
 function renderUptimeTrend() {
   const ctx = document.getElementById('uptimeTrendChart').getContext('2d');
-  if (uptimeChart) uptimeChart.destroy();
-  uptimeChart = new Chart(ctx, {
+  if (window.uptimeChart) window.uptimeChart.destroy();
+  
+  window.uptimeChart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: weeks,
       datasets: [
-        { label: 'Sentinel', data: sentinelUptime, borderColor: '#2899f5', tension: 0.3, fill: false, pointRadius: 3 },
-        { label: 'Defender', data: defenderUptime, borderColor: '#16c60c', tension: 0.3, fill: false, pointRadius: 3 },
-        { label: 'CrowdStrike', data: crowdstrikeUptime, borderColor: '#ff8c00', tension: 0.3, fill: false, pointRadius: 3, borderDash: [4,2] },
-        { label: 'SDP', data: sdpUptime, borderColor: '#9d88f0', tension: 0.3, fill: false, pointRadius: 3 }
+        { label: 'Sentinel', data: sentinelUptime, borderColor: '#2899f5', backgroundColor: 'rgba(40,153,245,0.05)', fill: true, tension: 0.2, pointRadius: 4, pointBackgroundColor: '#2899f5', borderWidth: 2 },
+        { label: 'Defender', data: defenderUptime, borderColor: '#16c60c', backgroundColor: 'rgba(22,198,12,0.05)', fill: true, tension: 0.2, pointRadius: 4, pointBackgroundColor: '#16c60c', borderWidth: 2 },
+        { label: 'CrowdStrike', data: crowdstrikeUptime, borderColor: '#ff8c00', backgroundColor: 'rgba(255,140,0,0.05)', fill: true, tension: 0.2, pointRadius: 4, pointBackgroundColor: '#ff8c00', borderWidth: 2 },
+        { label: 'SDP', data: sdpUptime, borderColor: '#9d88f0', backgroundColor: 'rgba(157,136,240,0.05)', fill: true, tension: 0.2, pointRadius: 4, pointBackgroundColor: '#9d88f0', borderWidth: 2 }
       ]
     },
     options: {
-      responsive: true, maintainAspectRatio: true,
-      plugins: { legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9 } } } },
-      scales: { y: { min: 94, max: 100.5, ticks: { callback: (v) => v+'%' }, grid: { color: 'rgba(255,255,255,0.04)' } } }
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 12, font: { size: 10 } } },
+        tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw}% uptime` } }
+      },
+      scales: {
+        y: { 
+          min: 98, 
+          max: 101, 
+          ticks: { callback: (v) => v + '%' },
+          grid: { color: 'rgba(255,255,255,0.04)' }
+        },
+        x: { grid: { display: false } }
+      }
     }
   });
 }
 
-function renderDowntimeChart() {
-  const ctx = document.getElementById('downtimeChart').getContext('2d');
-  if (downtimeChart) downtimeChart.destroy();
-  downtimeChart = new Chart(ctx, {
+// Health Overview Chart (Bar chart showing 100% for all) - REPLACES downtime chart
+function renderHealthOverview() {
+  const ctx = document.getElementById('healthOverviewChart').getContext('2d');
+  if (window.healthChart) window.healthChart.destroy();
+  
+  window.healthChart = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: weeks,
-      datasets: [
-        { label: 'CrowdStrike (min)', data: crowdstrikeDowntime, backgroundColor: '#f1707b', borderRadius: 4 },
-        { label: 'Sentinel', data: sentinelDowntime, backgroundColor: '#2899f5', borderRadius: 4 },
-        { label: 'Defender', data: defenderDowntime, backgroundColor: '#16c60c', borderRadius: 4 },
-        { label: 'SDP', data: sdpDowntime, backgroundColor: '#9d88f0', borderRadius: 4 }
-      ]
+      labels: ['Sentinel', 'Defender', 'CrowdStrike', 'SDP'],
+      datasets: [{
+        label: '30-Day Uptime (%)',
+        data: [100, 100, 100, 100],
+        backgroundColor: ['#2899f5', '#16c60c', '#ff8c00', '#9d88f0'],
+        borderRadius: 8,
+        barPercentage: 0.6,
+        categoryPercentage: 0.8
+      }]
     },
     options: {
-      responsive: true, maintainAspectRatio: true,
-      plugins: { legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9 } } } },
-      scales: { x: { stacked: false }, y: { title: { display: true, text: 'Downtime Minutes', color: '#8b949e', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } } }
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => `${ctx.raw}% Uptime - 0 incidents` } }
+      },
+      scales: {
+        y: { 
+          min: 95, 
+          max: 102, 
+          ticks: { callback: (v) => v + '%' },
+          grid: { color: 'rgba(255,255,255,0.04)' }
+        },
+        x: { grid: { display: false }, ticks: { font: { size: 11, weight: '500' } } }
+      }
     }
   });
 }
 
-// ========== SIMULATE DYNAMIC CHANGES FOR DEMO ==========
-let dynamicInterval;
-function startDynamicHealthSimulation() {
-  dynamicInterval = setInterval(() => {
-    // Randomly adjust CrowdStrike coverage to simulate fluctuation
-    let newCoverage = servicesHealth.crowdstrike.coverage + (Math.random() * 4 - 2);
-    newCoverage = Math.min(98, Math.max(82, newCoverage));
-    servicesHealth.crowdstrike.coverage = Math.floor(newCoverage);
-    servicesHealth.crowdstrike.barWidth = newCoverage;
-    if (newCoverage < 90) servicesHealth.crowdstrike.status = "degraded";
-    else servicesHealth.crowdstrike.status = "operational";
-    servicesHealth.crowdstrike.uptime30d = (96 + Math.random() * 2.5).toFixed(1);
-    
-    // update sentinel incidents count with some variance
-    servicesHealth.sentinel.incidents7d = Math.floor(120 + Math.random() * 40);
-    
-    // Add new incident log occasionally
-    if (Math.random() > 0.75) {
-      const newIncident = {
-        time: new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', hour12: false }),
-        service: Math.random() > 0.6 ? "CrowdStrike" : "Sentinel",
-        desc: Math.random() > 0.5 ? "Telemetry delay detected on subset of sensors" : "API latency spike auto-resolved",
-        status: "monitoring",
-        severity: "degraded"
-      };
-      incidentLog.unshift(newIncident);
-      if (incidentLog.length > 12) incidentLog.pop();
-      renderIncidentHistory();
-    }
-    
-    renderServiceCards();
-    
-    // Simulate CrowdStrike downtime chart update (minute values change for latest week)
-    const latestIdx = weeks.length-1;
-    crowdstrikeDowntime[latestIdx] = Math.floor(120 + Math.random() * 80);
-    sentinelDowntime[latestIdx] = Math.floor(2 + Math.random() * 8);
-    defenderDowntime[latestIdx] = Math.floor(1 + Math.random() * 5);
-    sdpDowntime[latestIdx] = Math.floor(5 + Math.random() * 10);
-    
-    // update uptime percentages for current week
-    crowdstrikeUptime[latestIdx] = servicesHealth.crowdstrike.uptime30d;
-    sentinelUptime[latestIdx] = 99.9 + (Math.random() * 0.08);
-    defenderUptime[latestIdx] = 99.95 + (Math.random() * 0.04);
-    sdpUptime[latestIdx] = 99.88 + (Math.random() * 0.1);
-    
-    renderUptimeTrend();
-    renderDowntimeChart();
-  }, 14000);
-}
+// ========== NO DYNAMIC FLUCTUATIONS - EVERYTHING STAYS CONSTANT ==========
+// All values remain at 100% - no intervals needed to change uptime
+// No incident history updates - removed entirely
 
-// ========== INIT ==========
-renderServiceCards();
-renderIncidentHistory();
+// ========== INITIAL RENDER ==========
+document.getElementById('overall-uptime').innerText = '100%';
 renderUptimeTrend();
-renderDowntimeChart();
-startDynamicHealthSimulation();
+renderHealthOverview();
+
+// Optional: subtle refresh of charts (keeping data constant)
+setInterval(() => {
+  // Maintain constant data (no changes)
+  if (window.uptimeChart) window.uptimeChart.update();
+  if (window.healthChart) window.healthChart.update();
+}, 30000);
 </script>
 </body>
 </html>
