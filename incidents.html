@@ -6,72 +6,279 @@
 <title>ACFC | SDP — Open Requests</title>
 <link rel="stylesheet" href="sentinel.css">
 <style>
-.page { display:flex; flex-direction:column; height:100vh; }
+.page { display: flex; flex-direction: column; height: 100vh; }
 
-/* TICKER */
-.update-ticker { background:rgba(0,120,212,0.07); border-bottom:1px solid var(--border); height:28px; display:flex; align-items:center; overflow:hidden; flex-shrink:0; }
-.update-label  { font-size:10px; font-weight:700; letter-spacing:1.5px; color:#fff; background:var(--sentinel-blue); padding:0 14px; height:100%; display:flex; align-items:center; white-space:nowrap; flex-shrink:0; }
-.update-track  { overflow:hidden; flex:1; }
-.update-inner  { display:flex; gap:48px; white-space:nowrap; animation:tickerScroll 60s linear infinite; }
-.update-inner span { font-size:10px; color:var(--sentinel-blue); }
-.update-inner .sep { color:var(--text-dim); }
-@keyframes tickerScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+/* SCALED UP - LARGER FONTS & SPACING */
+:root {
+  --table-font-size: 14px;
+  --header-font-size: 13px;
+  --badge-font-size: 12px;
+  --id-font-size: 15px;
+}
 
-/* TABLE WRAPPER */
-.table-wrap { flex:1; overflow-y:auto; padding:0; }
-.table-wrap::-webkit-scrollbar { width:4px; }
-.table-wrap::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:2px; }
+/* TICKER - SCALED */
+.update-ticker { 
+  background: rgba(0,120,212,0.07); 
+  border-bottom: 1px solid var(--border); 
+  height: 38px; 
+  display: flex; 
+  align-items: center; 
+  overflow: hidden; 
+  flex-shrink: 0; 
+}
+.update-label { 
+  font-size: 12px; 
+  font-weight: 700; 
+  letter-spacing: 1.5px; 
+  color: #fff; 
+  background: var(--sentinel-blue); 
+  padding: 0 20px; 
+  height: 100%; 
+  display: flex; 
+  align-items: center; 
+  white-space: nowrap; 
+  flex-shrink: 0; 
+}
+.update-track { overflow: hidden; flex: 1; }
+.update-inner { display: flex; gap: 60px; white-space: nowrap; animation: tickerScroll 60s linear infinite; }
+.update-inner span { font-size: 13px; color: var(--sentinel-blue); font-weight: 500; }
+.update-inner .sep { color: var(--text-dim); }
+@keyframes tickerScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
-/* PANEL HEADER */
+/* TABLE WRAPPER - WITH AUTO-SCROLL */
+.table-wrap { 
+  flex: 1; 
+  overflow-y: auto; 
+  padding: 0; 
+  scroll-behavior: smooth;
+}
+.table-wrap::-webkit-scrollbar { width: 8px; }
+.table-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+.table-wrap::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+
+/* PANEL HEADER - SCALED */
 .tbl-header {
-  display:flex; align-items:center; gap:10px;
-  padding:14px 24px 12px;
-  border-bottom:1px solid var(--border);
-  flex-shrink:0;
-  background:var(--bg-panel);
+  display: flex; 
+  align-items: center; 
+  gap: 14px;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg-panel);
 }
-.tbl-header-title { font-size:15px; font-weight:600; color:var(--text-bright); }
-.tbl-header-count { font-size:12px; color:var(--text-dim); margin-left:auto; }
+.tbl-header-title { 
+  font-size: 20px; 
+  font-weight: 700; 
+  color: var(--text-bright); 
+  letter-spacing: 0.3px;
+}
+.tbl-header-count { 
+  font-size: 14px; 
+  color: var(--text-dim); 
+  margin-left: auto;
+  background: var(--bg-card);
+  padding: 6px 16px;
+  border-radius: 30px;
+  font-weight: 500;
+}
 
-/* REQUEST TABLE */
-.req-table { width:100%; border-collapse:collapse; }
+/* AUTO-SCROLL CONTROL */
+.scroll-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: 20px;
+}
+.scroll-toggle {
+  width: 48px;
+  height: 24px;
+  background: rgba(0,120,212,0.2);
+  border-radius: 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  transition: all 0.2s;
+}
+.scroll-toggle.active {
+  background: rgba(0,120,212,0.6);
+}
+.scroll-knob {
+  width: 18px;
+  height: 18px;
+  background: var(--sentinel-blue);
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.scroll-toggle.active .scroll-knob {
+  transform: translateX(24px);
+}
+.scroll-label {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* REQUEST TABLE - LARGER */
+.req-table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  font-size: 14px;
+}
 .req-table th {
-  text-align:left; padding:10px 24px;
-  color:var(--text-dim); border-bottom:1px solid var(--border);
-  font-weight:500; font-size:10px; letter-spacing:1px;
-  text-transform:uppercase; background:var(--bg-base);
-  position:sticky; top:0; z-index:1;
+  text-align: left; 
+  padding: 16px 28px;
+  color: var(--text-dim); 
+  border-bottom: 2px solid var(--border);
+  font-weight: 600; 
+  font-size: 12px; 
+  letter-spacing: 1px;
+  text-transform: uppercase; 
+  background: var(--bg-base);
+  position: sticky; 
+  top: 0; 
+  z-index: 1;
 }
-.req-row { cursor:default; animation:rowIn 0.35s ease forwards; opacity:0; }
-.req-row.flash { animation:rowFlash 2s ease forwards; }
-@keyframes rowIn   { to { opacity:1; } }
+.req-row { 
+  cursor: default; 
+  animation: rowIn 0.35s ease forwards; 
+  opacity: 0; 
+  transition: background 0.2s;
+}
+.req-row.flash { 
+  animation: rowFlash 2s ease forwards; 
+}
+@keyframes rowIn { 
+  to { opacity: 1; } 
+}
 @keyframes rowFlash {
-  0%   { opacity:0; background:rgba(0,120,212,0.28); }
-  50%  { opacity:1; background:rgba(0,120,212,0.14); }
-  100% { opacity:1; background:transparent; }
+  0%   { opacity: 0; background: rgba(0,120,212,0.3); }
+  50%  { opacity: 1; background: rgba(0,120,212,0.15); }
+  100% { opacity: 1; background: transparent; }
 }
-.req-row td {
-  padding:14px 24px;
-  border-bottom:1px solid rgba(255,255,255,0.04);
-  vertical-align:middle;
+.req-row:hover td { 
+  background: var(--bg-hover); 
 }
-.req-row:hover td { background:var(--bg-hover); }
 
-.req-id   { font-family:monospace; font-size:13px; color:var(--text-dim); white-space:nowrap; width:70px; }
-.req-subj { }
-.opco-name { font-size:13px; font-weight:600; color:var(--sentinel-blue); display:block; margin-bottom:3px; }
-.subj-text { font-size:12px; color:var(--text); }
-.col-opco  { font-size:12px; color:var(--text-dim); white-space:nowrap; width:80px; }
-.col-tech  { font-size:12px; color:var(--text); white-space:nowrap; width:160px; }
-.col-prio  { font-size:13px; font-weight:600; white-space:nowrap; width:60px; }
-.col-sla   { font-size:12px; font-weight:600; white-space:nowrap; width:140px; }
+.req-id { 
+  font-family: 'SF Mono', 'Fira Code', monospace; 
+  font-size: 15px; 
+  font-weight: 600;
+  color: var(--sentinel-blue); 
+  white-space: nowrap; 
+  width: 90px; 
+  letter-spacing: 0.3px;
+}
+.req-subj { 
+  max-width: 500px;
+}
+.opco-name { 
+  font-size: 15px; 
+  font-weight: 700; 
+  color: var(--sentinel-blue); 
+  display: block; 
+  margin-bottom: 5px; 
+  letter-spacing: 0.3px;
+}
+.subj-text { 
+  font-size: 13px; 
+  color: var(--text); 
+  line-height: 1.45;
+  display: block;
+}
+.col-opco { 
+  font-size: 14px; 
+  font-weight: 500;
+  color: var(--text-bright); 
+  white-space: nowrap; 
+  width: 90px; 
+}
+.col-tech { 
+  font-size: 13px; 
+  color: var(--text); 
+  white-space: nowrap; 
+  width: 180px; 
+  font-weight: 500;
+}
+.col-prio { 
+  font-size: 16px; 
+  font-weight: 700; 
+  white-space: nowrap; 
+  width: 70px; 
+}
+.col-sla { 
+  font-size: 13px; 
+  font-weight: 600; 
+  white-space: nowrap; 
+  width: 160px; 
+}
 
-/* STATUS BADGES */
-.badge { display:inline-block; font-size:10px; padding:3px 10px; border-radius:3px; font-weight:500; white-space:nowrap; }
-.s-new      { background:rgba(241,112,123,.15); color:#f1707b; border:1px solid rgba(241,112,123,.35); }
-.s-progress { background:rgba(40,153,245,.15);  color:#2899f5; border:1px solid rgba(40,153,245,.35); }
-.s-pending  { background:rgba(255,140,0,.15);   color:#ff8c00; border:1px solid rgba(255,140,0,.35); }
-.s-closed   { background:rgba(22,198,12,.12);   color:#16c60c; border:1px solid rgba(22,198,12,.25); }
+.req-table td {
+  padding: 18px 28px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  vertical-align: middle;
+}
+
+/* STATUS BADGES - SCALED UP */
+.badge { 
+  display: inline-block; 
+  font-size: 12px; 
+  padding: 5px 14px; 
+  border-radius: 20px; 
+  font-weight: 600; 
+  white-space: nowrap; 
+  letter-spacing: 0.3px;
+}
+.s-new      { background: rgba(241,112,123,0.18); color: #f1707b; border: 1px solid rgba(241,112,123,0.4); }
+.s-progress { background: rgba(40,153,245,0.18);  color: #2899f5; border: 1px solid rgba(40,153,245,0.4); }
+.s-pending  { background: rgba(255,140,0,0.18);   color: #ff8c00; border: 1px solid rgba(255,140,0,0.4); }
+.s-closed   { background: rgba(22,198,12,0.15);   color: #16c60c; border: 1px solid rgba(22,198,12,0.3); }
+
+/* SLA COLOR VARIATIONS */
+.sla-critical { color: #f1707b; font-weight: 700; }
+.sla-warning  { color: #ff8c00; font-weight: 600; }
+.sla-normal   { color: var(--text-dim); }
+.sla-good     { color: #16c60c; }
+
+/* RESPONSIVE */
+@media (max-width: 1200px) {
+  .req-table th, .req-table td {
+    padding: 14px 20px;
+  }
+  .col-tech, .col-opco {
+    white-space: normal;
+    min-width: 100px;
+  }
+}
+
+/* Stats bar */
+.stats-bar {
+  display: flex;
+  gap: 20px;
+  padding: 12px 28px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.stat-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.stat-dot.new { background: #f1707b; box-shadow: 0 0 6px rgba(241,112,123,0.5); }
+.stat-dot.progress { background: #2899f5; }
+.stat-dot.pending { background: #ff8c00; }
+.stat-dot.closed { background: #16c60c; }
+.stat-number {
+  font-weight: 700;
+  color: var(--text-bright);
+  font-size: 15px;
+}
 </style>
 </head>
 <body>
@@ -86,7 +293,7 @@
     </div>
     <div>
       <div class="topbar-title">Axiata Cyber Fusion Center</div>
-      <div class="topbar-sub">ServiceDesk Plus — Open Requests</div>
+      <div class="topbar-sub">ServiceDesk Plus — Open Requests · Live Monitor</div>
     </div>
     <nav class="topbar-nav">
       <a href="index.html"       class="nav-item">Overview</a>
@@ -101,32 +308,43 @@
     </div>
   </div>
 
-  <!-- TICKER -->
+  <!-- TICKER - SCALED -->
   <div class="update-ticker">
-    <div class="update-label">UPDATES</div>
+    <div class="update-label">LIVE UPDATES</div>
     <div class="update-track">
-      <div class="update-inner" id="ticker-inner"><span>Loading…</span></div>
+      <div class="update-inner" id="ticker-inner"><span>Loading requests...</span></div>
     </div>
   </div>
 
-  <!-- TABLE HEADER -->
-  <div class="tbl-header" style="background:var(--bg-panel);">
+  <!-- TABLE HEADER - SCALED WITH AUTO-SCROLL CONTROL -->
+  <div class="tbl-header">
     <span class="status-dot blue pulse"></span>
-    <span class="tbl-header-title">Open Requests — All OpCos</span>
+    <span class="tbl-header-title">📋 SDP Request Queue</span>
     <span class="tbl-header-count" id="req-count">— open requests</span>
+    <div class="scroll-control">
+      <div class="scroll-toggle" id="scroll-toggle" onclick="toggleAutoScroll()">
+        <div class="scroll-knob"></div>
+      </div>
+      <span class="scroll-label" id="scroll-label">Auto-scroll Off</span>
+    </div>
   </div>
 
-  <!-- TABLE -->
-  <div class="table-wrap">
+  <!-- STATS BAR -->
+  <div class="stats-bar" id="stats-bar">
+    <!-- dynamic stats injected -->
+  </div>
+
+  <!-- TABLE WRAPPER (scrollable) -->
+  <div class="table-wrap" id="table-wrap">
     <table class="req-table">
       <thead>
         <tr>
           <th>ID</th>
-          <th>Subject</th>
+          <th>Subject / OpCo</th>
           <th>OpCo</th>
           <th>Technician</th>
           <th>Status</th>
-          <th>Prio</th>
+          <th>Priority</th>
           <th>SLA</th>
         </tr>
       </thead>
@@ -137,7 +355,7 @@
 </div>
 
 <script>
-// CLOCK
+// ========== CLOCK ==========
 function tick() {
   const n = new Date();
   document.getElementById('clock').textContent =
@@ -154,39 +372,86 @@ function handleLogo(e) {
   }; r.readAsDataURL(f);
 }
 
-// DATA
+// ========== AUTO-SCROLL FUNCTIONALITY ==========
+let autoScrollEnabled = false;
+let scrollInterval = null;
+let scrollDirection = 1;
+
+function toggleAutoScroll() {
+  const toggle = document.getElementById('scroll-toggle');
+  const label = document.getElementById('scroll-label');
+  autoScrollEnabled = !autoScrollEnabled;
+  
+  if (autoScrollEnabled) {
+    toggle.classList.add('active');
+    label.textContent = 'Auto-scroll On';
+    startAutoScroll();
+  } else {
+    toggle.classList.remove('active');
+    label.textContent = 'Auto-scroll Off';
+    if (scrollInterval) {
+      clearInterval(scrollInterval);
+      scrollInterval = null;
+    }
+  }
+}
+
+function startAutoScroll() {
+  if (scrollInterval) clearInterval(scrollInterval);
+  
+  scrollInterval = setInterval(() => {
+    const scrollBody = document.getElementById('table-wrap');
+    if (!scrollBody || !autoScrollEnabled) return;
+    
+    scrollBody.scrollTop += scrollDirection;
+    
+    // Check boundaries
+    if (scrollBody.scrollTop + scrollBody.clientHeight >= scrollBody.scrollHeight - 50) {
+      scrollDirection = -1;
+    } else if (scrollBody.scrollTop <= 0) {
+      scrollDirection = 1;
+    }
+  }, 40);
+}
+
+// ========== EXPANDED DATA SET ==========
 const REQS = [
-  { id:11352, opco:'SMART', tech:'Haziq Muhammad',     subject:'Global IT PR T1098 NCR Windows User Account Enabled or Disabled', status:'In Progress',               prio:'P2', slaHrs:0.4  },
-  { id:11351, opco:'HDM',   tech:'Irfan Ismail',       subject:'TI Map IP Entity to CommonSecurityLog',                           status:'Pending OpCo Verification', prio:'P3', slaHrs:1.2  },
-  { id:11350, opco:'EDOT',  tech:'Irfan Ismail',       subject:'Unfamiliar sign-in properties involving one user',                status:'Pending OpCo Verification', prio:'P3', slaHrs:2.1  },
-  { id:11349, opco:'ADL',   tech:'Irfan Ismail',       subject:'Impossible travel activity involving one user',                   status:'Pending OpCo Verification', prio:'P3', slaHrs:-0.3 },
-  { id:11348, opco:'ADL',   tech:'Satheya Elangohvan', subject:'NRT Authentication Methods Changed for VIP Users',                status:'Pending OpCo Verification', prio:'P2', slaHrs:-1.1 },
-  { id:11347, opco:'XL',    tech:'Irfan Ismail',       subject:'Global IT PR T1098 NCR Windows User Account Enabled or Disabled', status:'Pending OpCo Verification', prio:'P3', slaHrs:3.8  },
-  { id:11346, opco:'DGIT',  tech:'Satheya Elangohvan', subject:'Imperva — Multiple user agents from same source',                 status:'Pending OpCo Verification', prio:'P3', slaHrs:5.2  },
-  { id:11345, opco:'DGIT',  tech:'Satheya Elangohvan', subject:'Imperva — Request from unexpected countries',                     status:'In Progress',               prio:'P3', slaHrs:6.7  },
-  { id:11344, opco:'CDB',   tech:'Satheya Elangohvan', subject:'CEL APP T1566 RD T1S NCR Web MPS HIGH Risk Alert — Celcom',       status:'In Progress',               prio:'P2', slaHrs:8.4  },
+  { id: 11352, opco: 'SMART', tech: 'Haziq Muhammad', subject: 'Global IT PR T1098 NCR Windows User Account Enabled or Disabled', status: 'In Progress', prio: 'P2', slaHrs: 0.4 },
+  { id: 11351, opco: 'HDM', tech: 'Irfan Ismail', subject: 'TI Map IP Entity to CommonSecurityLog', status: 'Pending OpCo Verification', prio: 'P3', slaHrs: 1.2 },
+  { id: 11350, opco: 'EDOT', tech: 'Irfan Ismail', subject: 'Unfamiliar sign-in properties involving one user', status: 'Pending OpCo Verification', prio: 'P3', slaHrs: 2.1 },
+  { id: 11349, opco: 'ADL', tech: 'Irfan Ismail', subject: 'Impossible travel activity involving one user', status: 'Pending OpCo Verification', prio: 'P3', slaHrs: -0.3 },
+  { id: 11348, opco: 'ADL', tech: 'Satheya Elangohvan', subject: 'NRT Authentication Methods Changed for VIP Users', status: 'Pending OpCo Verification', prio: 'P2', slaHrs: -1.1 },
+  { id: 11347, opco: 'XL', tech: 'Irfan Ismail', subject: 'Global IT PR T1098 NCR Windows User Account Enabled or Disabled', status: 'Pending OpCo Verification', prio: 'P3', slaHrs: 3.8 },
+  { id: 11346, opco: 'DGIT', tech: 'Satheya Elangohvan', subject: 'Imperva — Multiple user agents from same source', status: 'Pending OpCo Verification', prio: 'P3', slaHrs: 5.2 },
+  { id: 11345, opco: 'DGIT', tech: 'Satheya Elangohvan', subject: 'Imperva — Request from unexpected countries', status: 'In Progress', prio: 'P3', slaHrs: 6.7 },
+  { id: 11344, opco: 'CDB', tech: 'Satheya Elangohvan', subject: 'CEL APP T1566 RD T1S NCR Web MPS HIGH Risk Alert — Celcom', status: 'In Progress', prio: 'P2', slaHrs: 8.4 },
+  { id: 11343, opco: 'ROBI', tech: 'Nadiah Zulkifli', subject: 'Suspicious PowerShell execution pattern detected', status: 'New', prio: 'P1', slaHrs: 0.1 },
+  { id: 11342, opco: 'DIALOG', tech: 'Ameerah Hamid', subject: 'DNS tunneling activity from internal assets', status: 'In Progress', prio: 'P2', slaHrs: 2.3 },
+  { id: 11341, opco: 'AXIATA', tech: 'Haziq Muhammad', subject: 'CrowdStrike sensor coverage gap detected', status: 'Pending OpCo Verification', prio: 'P2', slaHrs: -2.5 },
 ];
 
-const NEW_REQ = { id:11353, opco:'BOBA', tech:'Ameerah Hamid', subject:'A workload was launched in an unusual way in cluster production-bankapp', status:'New', prio:'P2', slaHrs:0.1 };
+const NEW_REQ = { id: 11353, opco: 'BOBA', tech: 'Ameerah Hamid', subject: 'A workload was launched in an unusual way in cluster production-bankapp', status: 'New', prio: 'P2', slaHrs: 0.1 };
+const NEW_REQ2 = { id: 11354, opco: 'CELCOM', tech: 'Irfan Ismail', subject: 'Critical: Possible MFA bypass attempt on admin accounts', status: 'New', prio: 'P1', slaHrs: 0.05 };
 
-const prioColor = { P1:'#f1707b', P2:'#ff8c00', P3:'#2899f5', P4:'#8b949e' };
+const prioColor = { P1: '#f1707b', P2: '#ff8c00', P3: '#2899f5', P4: '#8b949e' };
 const statusClass = {
-  'New':                       's-new',
-  'In Progress':               's-progress',
+  'New': 's-new',
+  'In Progress': 's-progress',
   'Pending OpCo Verification': 's-pending',
-  'Closed':                    's-closed',
+  'Closed': 's-closed',
 };
 
 function slaLabel(h) {
-  if (h < 0)  return `<span class="col-sla" style="color:#f1707b">BREACHED ${Math.abs(h).toFixed(1)}h ago</span>`;
-  if (h < 2)  return `<span class="col-sla" style="color:#ff8c00">${h.toFixed(1)}h left</span>`;
-  if (h < 24) return `<span class="col-sla" style="color:var(--text-dim)">${h.toFixed(1)}h left</span>`;
-  return `<span class="col-sla" style="color:var(--text-dim)">${Math.floor(h/24)}d left</span>`;
+  if (h < 0) return `<span class="col-sla sla-critical">⚠ BREACHED ${Math.abs(h).toFixed(1)}h ago</span>`;
+  if (h < 2) return `<span class="col-sla sla-warning">⏱ ${h.toFixed(1)}h left</span>`;
+  if (h < 24) return `<span class="col-sla sla-normal">📊 ${h.toFixed(1)}h left</span>`;
+  return `<span class="col-sla sla-good">✅ ${Math.floor(h/24)}d left</span>`;
 }
 
 function buildRow(req, isNew = false) {
   const tr = document.createElement('tr');
   tr.className = 'req-row' + (isNew ? ' flash' : '');
+  tr.setAttribute('data-id', req.id);
   tr.innerHTML = `
     <td class="req-id">#${req.id}</td>
     <td class="req-subj">
@@ -197,7 +462,8 @@ function buildRow(req, isNew = false) {
     <td class="col-tech">${req.tech}</td>
     <td><span class="badge ${statusClass[req.status] || ''}">${req.status}</span></td>
     <td class="col-prio" style="color:${prioColor[req.prio]}">${req.prio}</td>
-    <td>${slaLabel(req.slaHrs)}</td>`;
+    <td>${slaLabel(req.slaHrs)}</td>
+  `;
   return tr;
 }
 
@@ -208,59 +474,119 @@ function renderTable() {
   tb.innerHTML = '';
   currentReqs.forEach((r, i) => {
     const tr = buildRow(r);
-    tr.style.animationDelay = i * 0.06 + 's';
+    tr.style.animationDelay = (i * 0.03) + 's';
     tb.appendChild(tr);
   });
   const open = currentReqs.filter(r => r.status !== 'Closed').length;
   document.getElementById('req-count').textContent = `${open} open requests`;
+  renderStats();
 }
-renderTable();
+
+function renderStats() {
+  const stats = {
+    New: currentReqs.filter(r => r.status === 'New').length,
+    'In Progress': currentReqs.filter(r => r.status === 'In Progress').length,
+    'Pending OpCo Verification': currentReqs.filter(r => r.status === 'Pending OpCo Verification').length,
+    Closed: currentReqs.filter(r => r.status === 'Closed').length
+  };
+  const statsBar = document.getElementById('stats-bar');
+  statsBar.innerHTML = `
+    <div class="stat-chip"><div class="stat-dot new"></div><span>New</span><span class="stat-number">${stats.New}</span></div>
+    <div class="stat-chip"><div class="stat-dot progress"></div><span>In Progress</span><span class="stat-number">${stats['In Progress']}</span></div>
+    <div class="stat-chip"><div class="stat-dot pending"></div><span>Pending</span><span class="stat-number">${stats['Pending OpCo Verification']}</span></div>
+    <div class="stat-chip"><div class="stat-dot closed"></div><span>Resolved</span><span class="stat-number">${stats.Closed}</span></div>
+    <div class="stat-chip" style="margin-left: auto;"><span>🕒 Last sync:</span><span class="stat-number" id="last-sync">Just now</span></div>
+  `;
+  document.getElementById('last-sync').innerText = new Date().toLocaleTimeString();
+}
 
 function buildTicker(reqs) {
-  const items = reqs.map(r =>
-    `<span>[#${r.id}] ${r.opco} · ${r.subject.substring(0,60)}${r.subject.length>60?'…':''} — ${r.status}</span><span class="sep"> · </span>`
+  const items = reqs.slice(0, 15).map(r =>
+    `<span>[#${r.id}] ${r.opco} · ${r.subject.substring(0, 70)}${r.subject.length > 70 ? '…' : ''} — ${r.status}</span><span class="sep"> ● </span>`
   ).join('');
   document.getElementById('ticker-inner').innerHTML = items + items;
 }
-buildTicker(currentReqs);
+buildTicker(currentReqs.filter(r => r.status !== 'Closed'));
 
-// LIVE UPDATES
+// ========== LIVE UPDATES SIMULATION ==========
 const updates = [
-  { type:'update', id:11347, field:'status', val:'In Progress' },
-  { type:'new',    req: NEW_REQ },
-  { type:'update', id:11345, field:'status', val:'Pending OpCo Verification' },
-  { type:'update', id:11344, field:'status', val:'Closed' },
-  { type:'update', id:11350, field:'status', val:'In Progress' },
+  { type: 'update', id: 11347, field: 'status', val: 'In Progress', delay: 8000 },
+  { type: 'new', req: NEW_REQ, delay: 18000 },
+  { type: 'update', id: 11345, field: 'status', val: 'Pending OpCo Verification', delay: 28000 },
+  { type: 'update', id: 11344, field: 'status', val: 'Closed', delay: 38000 },
+  { type: 'update', id: 11350, field: 'status', val: 'In Progress', delay: 48000 },
+  { type: 'new', req: NEW_REQ2, delay: 58000 },
+  { type: 'update', id: 11341, field: 'status', val: 'In Progress', delay: 68000 },
+  { type: 'update', id: 11343, field: 'status', val: 'In Progress', delay: 78000 },
 ];
 
 function applyUpdate(u) {
   if (u.type === 'new') {
     currentReqs.unshift(u.req);
     const tr = buildRow(u.req, true);
-    document.getElementById('req-tbody').insertBefore(tr, document.getElementById('req-tbody').firstChild);
+    const tb = document.getElementById('req-tbody');
+    tb.insertBefore(tr, tb.firstChild);
+    buildTicker(currentReqs.filter(r => r.status !== 'Closed'));
+    
+    // When new request added, reset scroll direction to top if auto-scroll is on
+    if (autoScrollEnabled) {
+      const scrollBody = document.getElementById('table-wrap');
+      if (scrollBody) scrollBody.scrollTop = 0;
+      scrollDirection = 1;
+    }
   } else if (u.type === 'update') {
     const req = currentReqs.find(r => r.id === u.id);
     if (req) {
       req[u.field] = u.val;
-      document.querySelectorAll('#req-tbody tr').forEach(row => {
+      const rows = document.querySelectorAll('#req-tbody tr');
+      for (let row of rows) {
         const idEl = row.querySelector('.req-id');
         if (idEl && idEl.textContent === `#${u.id}`) {
           row.classList.add('flash');
           const badge = row.querySelector('.badge');
-          if (badge) { badge.className = `badge ${statusClass[u.val]||''}`; badge.textContent = u.val; }
-          setTimeout(() => row.classList.remove('flash'), 2500);
+          if (badge) {
+            badge.className = `badge ${statusClass[u.val] || ''}`;
+            badge.textContent = u.val;
+          }
+          setTimeout(() => row.classList.remove('flash'), 2000);
+          break;
         }
-      });
+      }
     }
   }
   const open = currentReqs.filter(r => r.status !== 'Closed').length;
   document.getElementById('req-count').textContent = `${open} open requests`;
+  renderStats();
   buildTicker(currentReqs.filter(r => r.status !== 'Closed'));
 }
 
-[14000, 28000, 43000, 57000, 72000].forEach((delay, i) => {
-  setTimeout(() => { if (i < updates.length) applyUpdate(updates[i]); }, delay);
+// Schedule updates
+updates.forEach(u => {
+  setTimeout(() => applyUpdate(u), u.delay);
 });
+
+// SLA visual pulse for breached items
+setInterval(() => {
+  const rows = document.querySelectorAll('#req-tbody tr');
+  rows.forEach(row => {
+    const slaCell = row.cells[6];
+    if (slaCell && slaCell.innerText.includes('BREACHED')) {
+      slaCell.style.transition = '0.3s';
+      slaCell.style.textShadow = '0 0 4px rgba(241,112,123,0.5)';
+      setTimeout(() => { slaCell.style.textShadow = 'none'; }, 500);
+    }
+  });
+}, 10000);
+
+// Auto-refresh ticker background update
+setInterval(() => {
+  buildTicker(currentReqs.filter(r => r.status !== 'Closed'));
+  document.getElementById('last-sync').innerText = new Date().toLocaleTimeString();
+}, 20000);
+
+// ========== INITIAL RENDER ==========
+renderTable();
+buildTicker(currentReqs.filter(r => r.status !== 'Closed'));
 </script>
 </body>
 </html>
