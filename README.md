@@ -40,9 +40,9 @@ Rebuilt based on L1/L2 analyst feedback. Defensive monitoring tool, not a report
 ## Hosting
 1. Push to GitHub repo
 2. Settings → Pages → Deploy from main / (root)
-3. Custom domain: add `CNAME` → `soc.axiatacfc.com`
+3. Custom domain: add `CNAME` → `axiatacfc.com`
 4. DNS: `CNAME soc → <username>.github.io`
 
 ## Maintained By
-- Lead: Rafaya (ACFC)
+- Lead: Rafa Islam Diba
 - Technical Support: Rafa Islam Diba · Ahmad Ahnaf Bin Masdi · Afeefah
